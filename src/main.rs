@@ -1,9 +1,9 @@
-// main.rs copyright 2022 
+// main.rs copyright 2022
 // balh blah blah
-// 
+//
 // mog
 
-// main.rs copyright 2022 
+// main.rs copyright 2022
 // balh blah blah
 
 // main.rs copyright 2022
@@ -29,10 +29,15 @@ fn main() {
                 println!("Error: Your config file wasn't formatted correctly.");
                 std::process::exit(exitcode::CONFIG);
             }
-            LoadConfigErr::CouldntCreateDefaultConfig => {
+            LoadConfigErr::CreateDefaultConfigErr => {
                 println!("Error: Failed to create default config file.");
                 std::process::exit(exitcode::IOERR)
             }
+            LoadConfigErr::LoadUserConfigErr => {
+                println!("Error: failed to load user config file.");
+                std::process::exit(exitcode::IOERR)
+            }
+            LoadConfigErr::NotFoundErr => std::process::exit(exitcode::IOERR),
         },
     };
 
@@ -48,9 +53,13 @@ fn main() {
         },
     }
 
+    println!("Config: \n{:#?}", config);
+
     println!("License raw text: \n{}", license.raw_text);
 
     let filetype_map = config.get_filetype_map();
+    println!("Filetype map:\n{:#?}", filetype_map);
+
     let mut changed_files_count: u32 = 0;
 
     for result in Walk::new("./") {
