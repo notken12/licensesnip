@@ -137,7 +137,10 @@ impl License {
             // add to top of file
             match prepend_file(text_to_add.as_bytes(), &path) {
                 Ok(_) => {}
-                Err(_) => return Err(AddToFileErr::WriteFileErr),
+                Err(e) => {
+                  println!("{}", e);
+                  return Err(AddToFileErr::WriteFileErr)
+                },
             };
 
             if pad_newline {
