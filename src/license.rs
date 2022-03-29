@@ -26,7 +26,7 @@ use crate::config::FileTypeConfig;
 
 const LICENSE_PATH: &str = ".licensesnip";
 
-fn prepend_file<P: AsRef<Path>>(data: &[u8], file_path: &P) -> io::Result<()> {
+fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     // Create a temporary file 
     let mut tmp = Temp::new_file()?;
     let mut tmp_path = tmp.to_path_buf();
@@ -39,6 +39,8 @@ fn prepend_file<P: AsRef<Path>>(data: &[u8], file_path: &P) -> io::Result<()> {
     let mut src = File::open(&file_path)?;
     // Write the data to prepend
     tmp.write_all(&data)?;
+    println!("tmp path: {}", tmp_path.display());
+    println!("file path: {}", file_path.display());
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
