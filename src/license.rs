@@ -1,23 +1,3 @@
-// license.rs copyright 2022 
-// balh blah blah
-// 
-// mog
-
-// license.rs copyright 2022 
-// balh blah blah
-
-// license.rs copyright 2022
-// balh blah blah
-
-// license.rs copyright 2022
-// balh blah blah
-
-// license.rs copyright 2022
-// balh blah blah
-
-// license.rs copyright 2022
-// balh blah blah
-
 use ignore::DirEntry;
 use mktemp::Temp;
 use std::{fs, fs::File, io, io::Write, path::Path};
@@ -28,8 +8,8 @@ const LICENSE_PATH: &str = ".licensesnip";
 
 fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     // Create a temporary file 
-    let mut tmp = Temp::new_file()?;
-    let mut tmp_path = tmp.to_path_buf();
+    let tmp = Temp::new_file()?;
+    let tmp_path = tmp.to_path_buf();
     // Stop the temp file being automatically deleted when the variable
     // is dropped, by releasing it.
     tmp.release();
@@ -39,8 +19,8 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     let mut src = File::open(&file_path)?;
     // Write the data to prepend
     tmp.write_all(&data)?;
-    println!("tmp path: {}", tmp_path.display());
-    println!("file path: {}", file_path.display());
+    // println!("tmp path: {}", tmp_path.display());
+    // println!("file path: {}", file_path.display());
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
@@ -98,7 +78,6 @@ impl License {
         header_text: &String,
     ) -> Result<AddToFileResult, AddToFileErr> {
         let path = ent.path();
-        println!("{}", path.display());
         let file_text = match fs::read_to_string(path) {
             Ok(s) => s,
             Err(_) => return Err(AddToFileErr::ReadFileErr),
@@ -124,18 +103,7 @@ impl License {
         }
 
         if should_add {
-            let next = f_chars.next();
-            let mut pad_newline = false;
-            match next {
-                Some(c) => pad_newline = c != '\n',
-                None => {}
-            };
-
-            let mut text_to_add = header_text.clone();
-
-            if pad_newline {
-                text_to_add.push('\n');
-            }
+            let text_to_add = header_text.clone();
 
             // add to top of file
             match prepend_file(text_to_add.as_bytes(), &path) {
@@ -146,10 +114,6 @@ impl License {
                 },
             };
 
-            if pad_newline {
-                return Ok(AddToFileResult::Reformatted);
-            }
-
             return Ok(AddToFileResult::Added);
         }
 
@@ -159,7 +123,6 @@ impl License {
 
 pub enum AddToFileResult {
     Added,
-    Reformatted,
     NoChange,
 }
 

@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::clone::Clone;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-static DEFAULT_CONFIG: &'static str = include_str!("default-config.json");
-const CFG_PATH: &str = "licensesnip.config.json";
+pub static DEFAULT_CONFIG: &'static str = include_str!("default-config.json");
+pub const CFG_PATH: &str = "licensesnip.config.json";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileTypeConfig {
@@ -140,23 +140,12 @@ pub enum LoadConfigErr {
 }
 
 pub fn load_config() -> Result<Config, LoadConfigErr> {
-    let config_dir;
+  let config_path = match user_config_path() {
+    Ok(d) => d,
+    Err(_) => return Err(LoadConfigErr::LoadUserConfigErr)
+  };
 
-    let proj_dirs;
-
-    if let Some(p) = ProjectDirs::from("io", "notken12", "licensesnip") {
-        proj_dirs = p;
-        config_dir = proj_dirs.config_dir()
-        // Linux:   /home/alice/.config/barapp
-        // Windows: C:\Users\Alice\AppData\Roaming\Foo Corp\Bar App
-        // macOS:   /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App
-    } else {
-        return Err(LoadConfigErr::LoadUserConfigErr);
-    };
-
-    println!("{}", config_dir.join(CFG_PATH).display());
-
-    let user_config = match PartialConfig::from_path(&config_dir.join(CFG_PATH), true) {
+    let user_config = match PartialConfig::from_path(&config_path, true) {
         Ok(c) => c,
         Err(e) => return Err(e),
     };
@@ -190,6 +179,23 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
 }
 
 fn create_default_config(path: &Path) -> Result<(), std::io::Error> {
-    println!("creating default config at {}", path.display());
     fs::write(path, DEFAULT_CONFIG)
+}
+
+pub fn user_config_path() -> Result<PathBuf, ()> {
+      let config_dir;
+
+    let proj_dirs;
+
+    if let Some(p) = ProjectDirs::from("io", "notken12", "licensesnip") {
+        proj_dirs = p;
+        config_dir = proj_dirs.config_dir()
+        // Linux:   /home/alice/.config/barapp
+        // Windows: C:\Users\Alice\AppData\Roaming\Foo Corp\Bar App
+        // macOS:   /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App
+    } else {
+        return Err(());
+    };
+  
+  Ok(config_dir.join(CFG_PATH))
 }
