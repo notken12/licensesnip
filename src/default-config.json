@@ -8,6 +8,9 @@
       "before_block": "<!--",
       "before_line": "  ",
       "after_block": "-->"
+    },
+    "rs": {
+      "before_line": "// "
     }
   }
 }
