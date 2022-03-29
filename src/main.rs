@@ -1,4 +1,4 @@
-// main.rs copyright 2022 
+// main.rs copyright 2022
 // balh blah blah
 
 // mog
@@ -19,6 +19,7 @@ fn main() {
     if let Some(command) = &args.command {
         match command {
             Commands::Config { directory } => commands::config::execute(*directory),
+            Commands::Remove => commands::remove::execute(),
         };
     } else {
         commands::default::execute();

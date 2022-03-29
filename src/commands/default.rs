@@ -1,10 +1,10 @@
-// default.rs copyright 2022 
+// default.rs copyright 2022
 // balh blah blah
 
 // mog
 
 use chrono;
-use chrono::Datelike; // 0.4.19
+use chrono::Datelike;
 
 use crate::config::{load_config, Config, LoadConfigErr};
 use crate::license::{read_license, AddToFileResult, License, ReadLicenseErr};

@@ -1,13 +1,30 @@
-// license.rs copyright 2022 
+// license.rs copyright 2022
 // balh blah blah
 
 // mog
 
+use crate::config::FileTypeConfig;
 use ignore::DirEntry;
 use mktemp::Temp;
-use std::{fs, fs::File, io, io::Write, path::Path};
+use std::{
+    fs,
+    fs::File,
+    io::Write,
+    io::{self, BufReader, Read},
+    path::Path,
+};
 
-use crate::config::FileTypeConfig;
+use std::convert::AsMut;
+
+fn clone_into_array<A, T>(slice: &[T]) -> A
+where
+    A: Default + AsMut<[T]>,
+    T: Clone,
+{
+    let mut a = A::default();
+    <A as AsMut<[T]>>::as_mut(&mut a).clone_from_slice(slice);
+    a
+}
 
 const LICENSE_PATH: &str = ".licensesnip";
 
@@ -24,6 +41,47 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     let mut src = File::open(&file_path)?;
     // Write the data to prepend
     tmp.write_all(&data)?;
+    // Copy the rest of the source file
+    io::copy(&mut src, &mut tmp)?;
+    fs::remove_file(&file_path)?;
+    fs::copy(&tmp_path, &file_path)?;
+    fs::remove_file(&tmp_path)?;
+    Ok(())
+}
+
+fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
+    // Create a temporary file
+    let tmp = Temp::new_file()?;
+    let tmp_path = tmp.to_path_buf();
+    // Stop the temp file being automatically deleted when the variable
+    // is dropped, by releasing it.
+    tmp.release();
+    // Open temp file for writing
+    let mut tmp = File::create(&tmp_path)?;
+    // Open source file for reading
+    let mut src = File::open(&file_path)?;
+
+    let mut i = 0;
+    let mut text = Vec::<u8>::new();
+    let full_text = BufReader::new(&src).bytes();
+
+    for byte in full_text {
+        match byte {
+            Ok(byte) => {
+                if i >= count {
+                    text.push(byte)
+                }
+                i += 1;
+            }
+            Err(e) => {
+                println!("{}", e);
+                std::process::exit(exitcode::IOERR);
+            }
+        }
+    }
+
+    // Write the data to prepend
+    tmp.write_all(text.as_slice())?;
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
@@ -98,12 +156,12 @@ impl License {
             Err(_) => return Err(AddToFileErr::ReadFileErr),
         };
 
-        let mut f_chars = file_text.bytes();
+        let mut f_bytes = file_text.bytes();
 
         let mut should_add = false;
 
-        for h_char in header_text.bytes() {
-            let f_char = match f_chars.next() {
+        for h_byte in header_text.bytes() {
+            let f_byte = match f_bytes.next() {
                 Some(c) => c,
                 None => {
                     // Reached the end of file
@@ -111,7 +169,7 @@ impl License {
                     break;
                 }
             };
-            if f_char != h_char {
+            if f_byte != h_byte {
                 should_add = true;
                 break;
             }
@@ -135,6 +193,71 @@ impl License {
 
         Ok(AddToFileResult::NoChange)
     }
+
+    pub fn remove_from_file(
+        ent: &DirEntry,
+        header_text: &String,
+    ) -> Result<RemoveFromFileResult, RemoveFromFileErr> {
+        let path = ent.path();
+        let file_text = match fs::read_to_string(path) {
+            Ok(s) => s,
+            Err(_) => return Err(RemoveFromFileErr::ReadFileErr),
+        };
+
+        let mut f_bytes = file_text.bytes();
+
+        let mut should_remove = false;
+        let mut r_count: u32 = 0;
+
+        // Remove if the top of the file matches the header text
+        for h_byte in header_text.bytes() {
+            let f_byte = match f_bytes.next() {
+                Some(c) => c,
+                None => {
+                    // Reached the end of file
+                    should_remove = false;
+                    break;
+                }
+            };
+            if f_byte != h_byte {
+                should_remove = false;
+                break;
+            }
+            r_count += 1;
+        }
+
+        if !should_remove {
+            return Ok(RemoveFromFileResult::NoChange);
+        }
+
+        // Also remove trailing newlines
+        loop {
+            let f_byte = match f_bytes.next() {
+                Some(c) => c,
+                None => {
+                    // Reached the end of file
+                    break;
+                }
+            };
+
+            if f_byte != b'\n' {
+                break;
+            }
+
+            r_count += 1;
+        }
+
+        // add to top of file
+        match remove_first_chars(r_count, &path) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("{}", e);
+                return Err(RemoveFromFileErr::WriteFileErr);
+            }
+        };
+
+        Ok(RemoveFromFileResult::NoChange)
+    }
 }
 
 pub enum AddToFileResult {
@@ -142,8 +265,19 @@ pub enum AddToFileResult {
     NoChange,
 }
 
+pub enum RemoveFromFileResult {
+    Removed,
+    NoChange,
+}
+
 #[derive(Debug)]
 pub enum AddToFileErr {
+    ReadFileErr,
+    WriteFileErr,
+}
+
+#[derive(Debug)]
+pub enum RemoveFromFileErr {
     ReadFileErr,
     WriteFileErr,
 }

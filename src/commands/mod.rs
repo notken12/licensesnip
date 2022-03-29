@@ -1,10 +1,11 @@
-// mod.rs copyright 2022 
+// mod.rs copyright 2022
 // balh blah blah
 
 // mog
 
 pub mod config;
 pub mod default;
+pub mod remove;
 
 use clap::{Parser, Subcommand};
 
@@ -30,4 +31,6 @@ pub enum Commands {
         #[clap(short, long)]
         directory: bool,
     },
+    /// Remove all license headers from directory files
+    Remove,
 }
