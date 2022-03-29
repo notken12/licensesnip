@@ -44,7 +44,8 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
-    fs::rename(&tmp_path, &file_path)?;
+    fs::copy(&tmp_path, &file_path)?;
+    fs::remove_file(&tmp_path)?;
     Ok(())
 }
 
