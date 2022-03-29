@@ -1,3 +1,8 @@
+// config.rs copyright 2022 
+// balh blah blah
+
+// mog
+
 use directories::ProjectDirs;
 
 use serde::{Deserialize, Serialize};
@@ -7,6 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub static DEFAULT_CONFIG: &'static str = include_str!("default-config.json");
+pub static BASE_CONFIG: &'static str = include_str!("base-config.json");
 pub const CFG_PATH: &str = "licensesnip.config.json";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -19,10 +25,9 @@ pub struct FileTypeConfig {
     pub before_line: String,
     #[serde(default = "String::new")]
     pub after_line: String,
-    #[serde(default= "get_true")]
-    pub enable: bool
+    #[serde(default = "get_true")]
+    pub enable: bool,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -31,19 +36,19 @@ pub struct Config {
 }
 
 impl Config {
-      pub fn get_filetype_map(&self) -> HashMap<String, FileTypeConfig> {
+    pub fn get_filetype_map(&self) -> HashMap<String, FileTypeConfig> {
         let mut map = HashMap::<String, FileTypeConfig>::new();
-            for (types, config) in &self.file_types {
-                let split = types.split(",");
-                for extension in split {
-                    map.insert(extension.to_string(), config.clone());
-                }
+        for (types, config) in &self.file_types {
+            let split = types.split(",");
+            for extension in split {
+                map.insert(extension.to_string(), config.clone());
             }
+        }
 
         map
     }
 
-      pub fn assign_partial(target: &Self, source: &PartialConfig) -> Self {
+    pub fn assign_partial(target: &Self, source: &PartialConfig) -> Self {
         let mut new = target.clone();
 
         if let Some(use_gitignore) = source.use_gitignore {
@@ -52,19 +57,19 @@ impl Config {
 
         if let Some(file_types) = &source.file_types {
             for (filetypes, cfg) in file_types {
-                    new.file_types.insert(filetypes.to_string(), cfg.clone());
+                new.file_types.insert(filetypes.to_string(), cfg.clone());
             }
         }
 
         new
     }
 
-  pub fn default() -> Self {
-    Self {
-      use_gitignore: true,
-      file_types: HashMap::<String, FileTypeConfig>::new()
+    pub fn default() -> Self {
+        Self {
+            use_gitignore: true,
+            file_types: HashMap::<String, FileTypeConfig>::new(),
+        }
     }
-  }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -74,12 +79,12 @@ pub struct PartialConfig {
 }
 
 impl PartialConfig {
-  pub fn default() -> Result<Self, LoadConfigErr> {
-      match serde_json::from_str(&DEFAULT_CONFIG) {
+    pub fn base() -> Result<Self, LoadConfigErr> {
+        match serde_json::from_str(&BASE_CONFIG) {
             Ok(config) => return Ok(config),
             Err(_) => return Err(LoadConfigErr::JsonFormattingErr),
         }
-  }
+    }
 
     pub fn from_path(path: &Path, create_default: bool) -> Result<Self, LoadConfigErr> {
         let file_text: String;
@@ -92,7 +97,7 @@ impl PartialConfig {
                     match create_default_config(path) {
                         Ok(_) => {}
                         Err(e) => {
-                            println!("{}", e);
+                            println!("{:?}", e);
                             return Err(LoadConfigErr::CreateDefaultConfigErr);
                         }
                     }
@@ -140,10 +145,10 @@ pub enum LoadConfigErr {
 }
 
 pub fn load_config() -> Result<Config, LoadConfigErr> {
-  let config_path = match user_config_path() {
-    Ok(d) => d,
-    Err(_) => return Err(LoadConfigErr::LoadUserConfigErr)
-  };
+    let config_path = match user_config_path() {
+        Ok(d) => d,
+        Err(_) => return Err(LoadConfigErr::LoadUserConfigErr),
+    };
 
     let user_config = match PartialConfig::from_path(&config_path, true) {
         Ok(c) => c,
@@ -157,14 +162,14 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
             _ => None,
         },
     };
-  
-    let default;
-    
-    match PartialConfig::default() {
-      Ok(d) => default = Config::assign_partial(&Config::default(), &d),
-      Err(e) => return Err(e)
+
+    let base;
+
+    match PartialConfig::base() {
+        Ok(d) => base = Config::assign_partial(&Config::default(), &d),
+        Err(e) => return Err(e),
     };
-  
+
     let mut assigned = user_config.clone();
 
     match cwd_config {
@@ -174,16 +179,32 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
         None => {}
     };
 
-
-    Ok(Config::assign_partial(&default, &assigned))
+    Ok(Config::assign_partial(&base, &assigned))
 }
 
-fn create_default_config(path: &Path) -> Result<(), std::io::Error> {
-    fs::write(path, DEFAULT_CONFIG)
+#[derive(Debug)]
+enum CreateDefaultConfigErr {
+    MissingPathParentErr,
+    IoErr(std::io::Error),
+}
+
+fn create_default_config(path: &Path) -> Result<(), CreateDefaultConfigErr> {
+    let dir = match path.parent() {
+        Some(p) => p,
+        None => return Err(CreateDefaultConfigErr::MissingPathParentErr),
+    };
+    match fs::create_dir_all(dir) {
+        Ok(_) => {}
+        Err(e) => return Err(CreateDefaultConfigErr::IoErr(e)),
+    };
+    match fs::write(path, DEFAULT_CONFIG) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(CreateDefaultConfigErr::IoErr(e)),
+    }
 }
 
 pub fn user_config_path() -> Result<PathBuf, ()> {
-      let config_dir;
+    let config_dir;
 
     let proj_dirs;
 
@@ -196,6 +217,6 @@ pub fn user_config_path() -> Result<PathBuf, ()> {
     } else {
         return Err(());
     };
-  
-  Ok(config_dir.join(CFG_PATH))
+
+    Ok(config_dir.join(CFG_PATH))
 }

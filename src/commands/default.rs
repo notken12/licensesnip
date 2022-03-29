@@ -1,12 +1,20 @@
+// default.rs copyright 2022 
+// balh blah blah
+
+// mog
+
+use chrono;
+use chrono::Datelike; // 0.4.19
+
 use crate::config::{load_config, Config, LoadConfigErr};
-use crate::license::{read_license, License, ReadLicenseErr, AddToFileResult};
+use crate::license::{read_license, AddToFileResult, License, ReadLicenseErr};
 
 use ignore::Walk;
 
 use colored::*;
 
 pub fn execute() {
-  let config: Config;
+    let config: Config;
     match load_config() {
         Ok(cfg) => config = cfg,
         Err(e) => match e {
@@ -43,6 +51,8 @@ pub fn execute() {
     let mut changed_files_count: u32 = 0;
     let mut matched_filetypes_count: u32 = 0;
 
+    let year = chrono::Utc::now().date().year();
+
     for result in Walk::new("./") {
         // Each item yielded by the iterator is either a directory entry or an
         // error, so either print the path or the error.
@@ -67,9 +77,9 @@ pub fn execute() {
 
                 let filetype_cfg = match filetype_map.get(ext) {
                     Some(e) => {
-                      matched_filetypes_count += 1;
-                      e
-                    },
+                        matched_filetypes_count += 1;
+                        e
+                    }
                     None => {
                         // No configuration for this file type
                         return;
@@ -77,16 +87,16 @@ pub fn execute() {
                 };
 
                 if !filetype_cfg.enable {
-                  // Disabled for this filetype
-                  return;
+                    // Disabled for this filetype
+                    return;
                 }
 
                 let raw_lines = license.get_lines();
 
-                let f_lines = License::get_formatted_lines(&raw_lines, &file_name, 2022);
+                let f_lines = License::get_formatted_lines(&raw_lines, &file_name, year);
 
                 let header_text = License::get_header_text(&f_lines, filetype_cfg);
-              
+
                 match License::add_to_file(&entry, &header_text) {
                     Ok(r) => {
                         match r {
@@ -111,10 +121,9 @@ pub fn execute() {
     println!("{}", status_str_colored);
 
     if matched_filetypes_count == 0 {
-      let warning = format!("{}\n\n{}\n\n{}", "⚠ No supported file types were found. You may need to add styling rules for your filetypes in your user/local config file. Run".yellow(), "licensesnip help", "for more info.".yellow());
+        let warning = format!("{}\n\n{}\n\n{}", "⚠ No supported file types were found. You may need to add styling rules for your filetypes in your user/local config file. Run".yellow(), "licensesnip help", "for more info.".yellow());
 
-      println!("{}", warning);
-      
+        println!("{}", warning);
     }
 
     std::process::exit(exitcode::OK);

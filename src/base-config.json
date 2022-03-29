@@ -1,0 +1,16 @@
+{
+  "use_gitignore": true,
+  "file_types": {
+    "js,mjs,ts,cjs,jsx,tsx": {
+      "before_line": "// "
+    },
+    "vue": {
+      "before_block": "<!--",
+      "before_line": "  ",
+      "after_block": "-->"
+    },
+    "rs": {
+      "before_line": "// "
+    }
+  }
+}

@@ -1,3 +1,8 @@
+// license.rs copyright 2022 
+// balh blah blah
+
+// mog
+
 use ignore::DirEntry;
 use mktemp::Temp;
 use std::{fs, fs::File, io, io::Write, path::Path};
@@ -7,7 +12,7 @@ use crate::config::FileTypeConfig;
 const LICENSE_PATH: &str = ".licensesnip";
 
 fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
-    // Create a temporary file 
+    // Create a temporary file
     let tmp = Temp::new_file()?;
     let tmp_path = tmp.to_path_buf();
     // Stop the temp file being automatically deleted when the variable
@@ -19,8 +24,6 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     let mut src = File::open(&file_path)?;
     // Write the data to prepend
     tmp.write_all(&data)?;
-    // println!("tmp path: {}", tmp_path.display());
-    // println!("file path: {}", file_path.display());
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
@@ -38,13 +41,21 @@ pub struct License {
 }
 
 impl License {
-    pub fn get_formatted(raw_text: &String, file_name: &str, year: u32) -> String {
+    pub fn get_formatted<Y: std::fmt::Display + Copy>(
+        raw_text: &String,
+        file_name: &str,
+        year: Y,
+    ) -> String {
         raw_text
             .replace("%FILENAME%", file_name)
             .replace("%YEAR%", &year.to_string())
     }
 
-    pub fn get_formatted_lines(lines: &Vec<&str>, file_name: &str, year: u32) -> Vec<String> {
+    pub fn get_formatted_lines<Y: std::fmt::Display + Copy>(
+        lines: &Vec<&str>,
+        file_name: &str,
+        year: Y,
+    ) -> Vec<String> {
         let mut vec = Vec::<String>::new();
         for str in lines {
             vec.push(License::get_formatted(&str.to_string(), file_name, year))
@@ -61,14 +72,18 @@ impl License {
         text.push_str(&cfg.before_block);
 
         for line in lines {
-            let mut line_text = cfg.before_line.clone();
-            line_text.push_str(line);
-            text.push_str(&line_text);
-            text.push('\n');
+            if line.trim().is_empty() {
+                text.push('\n')
+            } else {
+                let mut line_text = cfg.before_line.clone();
+                line_text.push_str(line);
+
+                text.push_str(&line_text);
+                text.push('\n');
+            }
         }
 
         text.push_str(&cfg.after_block);
-        text.push('\n');
 
         text
     }
@@ -83,11 +98,11 @@ impl License {
             Err(_) => return Err(AddToFileErr::ReadFileErr),
         };
 
-        let mut f_chars = file_text.chars();
+        let mut f_chars = file_text.bytes();
 
         let mut should_add = false;
 
-        for h_char in header_text.chars() {
+        for h_char in header_text.bytes() {
             let f_char = match f_chars.next() {
                 Some(c) => c,
                 None => {
@@ -103,15 +118,16 @@ impl License {
         }
 
         if should_add {
-            let text_to_add = header_text.clone();
+            let mut text_to_add = header_text.clone();
+            text_to_add.push('\n');
 
             // add to top of file
             match prepend_file(text_to_add.as_bytes(), &path) {
                 Ok(_) => {}
                 Err(e) => {
-                  println!("{}", e);
-                  return Err(AddToFileErr::WriteFileErr)
-                },
+                    println!("{}", e);
+                    return Err(AddToFileErr::WriteFileErr);
+                }
             };
 
             return Ok(AddToFileResult::Added);
