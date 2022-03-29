@@ -76,6 +76,7 @@ fn main() {
                     None => return,
                 }
 
+                // Get file extension
                 let file_name = entry.file_name().to_string_lossy();
                 let ext;
                 match file_name.split(".").last() {
@@ -90,6 +91,11 @@ fn main() {
                         return;
                     }
                 };
+
+                if !filetype_cfg.enable {
+                  // Disabled for this filetype
+                  return;
+                }
 
                 let raw_lines = license.get_lines();
 

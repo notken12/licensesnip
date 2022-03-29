@@ -52,7 +52,7 @@ impl Config {
 
         if let Some(file_types) = &source.file_types {
             for (filetypes, cfg) in file_types {
-                    &new.file_types.insert(filetypes.to_string(), cfg.clone());
+                    new.file_types.insert(filetypes.to_string(), cfg.clone());
             }
         }
 
