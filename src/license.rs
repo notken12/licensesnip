@@ -1,19 +1,19 @@
 // license.rs
-
+//
 // MIT License
-
+//
 // Copyright (c) 2022 Ken Zhou
-
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,6 +21,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+
 
 use crate::config::FileTypeConfig;
 use ignore::DirEntry;
@@ -134,27 +135,36 @@ impl License {
 
     pub fn get_header_text(lines: &Vec<String>, cfg: &FileTypeConfig) -> String {
         let mut text = String::new();
-        text.push_str(&cfg.before_block);
+
+        if !&cfg.before_block.is_empty() {
+            text.push_str(&cfg.before_block);
+            text.push('\n');
+        }
 
         let mut first = true;
 
         for line in lines {
+            if !first {
+                text.push('\n');
+            }
+            first = false;
+
             if line.trim().is_empty() {
-                text.push('\n')
+                let untrimmed = format!("{}{}", cfg.before_line.clone(), cfg.after_line.clone());
+                let line = untrimmed.trim();
+                text.push_str(line);
             } else {
-                if !first {
-                    text.push('\n');
-                }
                 let mut line_text = cfg.before_line.clone();
                 line_text.push_str(line);
 
                 text.push_str(&line_text);
-
-                first = false;
             }
         }
 
-        text.push_str(&cfg.after_block);
+        if !&cfg.after_block.is_empty() {
+            text.push('\n');
+            text.push_str(&cfg.after_block);
+        }
 
         text
     }
@@ -173,6 +183,8 @@ impl License {
 
         let mut should_add = false;
 
+        let mut count = 0;
+
         for h_byte in header_text.bytes() {
             let f_byte = match f_bytes.next() {
                 Some(c) => c,
@@ -183,9 +195,19 @@ impl License {
                 }
             };
             if f_byte != h_byte {
+                // Check if its a line-ending problem
+                // LF vs CRLF
+                // Skip CR, go to LF
+                if f_byte == 13 && h_byte == 10 {
+                    let _ = f_bytes.next();
+                    count += 1;
+                    continue;
+                }
                 should_add = true;
+                println!("expected {}, received {} at byte {}", h_byte, f_byte, count);
                 break;
             }
+            count += 1;
         }
 
         if should_add {
