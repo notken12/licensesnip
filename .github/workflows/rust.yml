@@ -48,5 +48,5 @@ jobs:
         # Artifact name
         name: licensesnip-win64.tar.gz # optional, default is artifact
         # A file, directory or wildcard pattern that describes what to upload
-        path: builds/licensesnip-win64/licensesnip-win64.tar.gz
+        path: licensesnip-win64.tar.gz
         # The desired behavior if no files are found using the provided path.
