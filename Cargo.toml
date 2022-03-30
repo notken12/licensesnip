@@ -1,5 +1,7 @@
 [package]
 name = "licensesnip"
+description = "A tool to add license headers to your source code."
+license = "MIT"
 version = "0.1.0"
 authors = ["notken12"]
 edition = "2021"
