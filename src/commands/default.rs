@@ -1,7 +1,26 @@
-// default.rs copyright 2022
-// balh blah blah
+// default.rs
 
-// mog
+// MIT License
+
+// Copyright (c) 2022 Ken Zhou
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 use chrono;
 use chrono::Datelike;
@@ -13,21 +32,24 @@ use ignore::Walk;
 
 use colored::*;
 
-pub fn execute() {
+pub fn execute(verbose: bool) {
     let config: Config;
     match load_config() {
         Ok(cfg) => config = cfg,
         Err(e) => match e {
             LoadConfigErr::JsonFormattingErr => {
-                println!("Error: Your config file wasn't formatted correctly.");
+                println!(
+                    "{}",
+                    "Error: Your config file wasn't formatted correctly.".red()
+                );
                 std::process::exit(exitcode::CONFIG);
             }
             LoadConfigErr::CreateDefaultConfigErr => {
-                println!("Error: Failed to create default config file.");
+                println!("{}", "Error: Failed to create default config file.".red());
                 std::process::exit(exitcode::IOERR)
             }
             LoadConfigErr::LoadUserConfigErr => {
-                println!("Error: failed to load user config file.");
+                println!("{}", "Error: failed to load user config file.".red());
                 std::process::exit(exitcode::IOERR)
             }
             LoadConfigErr::NotFoundErr => std::process::exit(exitcode::IOERR),
@@ -40,7 +62,7 @@ pub fn execute() {
         Ok(l) => license = l,
         Err(e) => match e {
             ReadLicenseErr::FileReadErr => {
-                println!("Error: Couldn't find a .licensesnip file in the current working directory's root.");
+                println!("{}", "Error: Couldn't find a .licensesnip file in the current working directory's root.".red());
                 std::process::exit(exitcode::CONFIG)
             }
         },
@@ -72,7 +94,15 @@ pub fn execute() {
                 let ext;
                 match file_name.split(".").last() {
                     Some(e) => ext = e,
-                    None => return,
+                    None => {
+                        if verbose {
+                            println!(
+                                "(skipped) Invalid file extension - {}",
+                                entry.path().display()
+                            )
+                        }
+                        return;
+                    }
                 }
 
                 let filetype_cfg = match filetype_map.get(ext) {
@@ -82,12 +112,27 @@ pub fn execute() {
                     }
                     None => {
                         // No configuration for this file type
+                        if verbose {
+                            println!(
+                                "(skipped) No file type configuration found for .{} - {}",
+                                ext,
+                                entry.path().display()
+                            );
+                        }
+
                         return;
                     }
                 };
 
                 if !filetype_cfg.enable {
                     // Disabled for this filetype
+                    if verbose {
+                        println!(
+                            "(skipped) Inserting header is disabled for .{} files - {}",
+                            ext,
+                            entry.path().display()
+                        )
+                    }
                     return;
                 }
 
@@ -101,9 +146,22 @@ pub fn execute() {
                     Ok(r) => {
                         match r {
                             AddToFileResult::Added => {
+                                if verbose {
+                                    println!(
+                                        "(ok) Added license header - {}",
+                                        entry.path().display()
+                                    );
+                                }
                                 changed_files_count += 1;
                             }
-                            _ => {}
+                            AddToFileResult::NoChange => {
+                                if verbose {
+                                    println!(
+                                        "(skipped) Header already present - {}",
+                                        entry.path().display()
+                                    );
+                                }
+                            }
                         };
                     }
                     Err(e) => {

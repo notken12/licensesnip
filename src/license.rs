@@ -1,7 +1,26 @@
-// license.rs copyright 2022
-// balh blah blah
+// license.rs
 
-// mog
+// MIT License
+
+// Copyright (c) 2022 Ken Zhou
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 use crate::config::FileTypeConfig;
 use ignore::DirEntry;
@@ -117,15 +136,21 @@ impl License {
         let mut text = String::new();
         text.push_str(&cfg.before_block);
 
+        let mut first = true;
+
         for line in lines {
             if line.trim().is_empty() {
                 text.push('\n')
             } else {
+                if !first {
+                    text.push('\n');
+                }
                 let mut line_text = cfg.before_line.clone();
                 line_text.push_str(line);
 
                 text.push_str(&line_text);
-                text.push('\n');
+
+                first = false;
             }
         }
 
@@ -165,7 +190,7 @@ impl License {
 
         if should_add {
             let mut text_to_add = header_text.clone();
-            text_to_add.push('\n');
+            text_to_add.push_str("\n\n");
 
             // add to top of file
             match prepend_file(text_to_add.as_bytes(), &path) {
@@ -194,7 +219,7 @@ impl License {
 
         let mut f_bytes = file_text.bytes();
 
-        let mut should_remove = false;
+        let mut should_remove = true;
         let mut r_count: u32 = 0;
 
         // Remove if the top of the file matches the header text
@@ -237,14 +262,12 @@ impl License {
 
         // add to top of file
         match remove_first_chars(r_count, &path) {
-            Ok(_) => {}
+            Ok(_) => return Ok(RemoveFromFileResult::Removed),
             Err(e) => {
                 println!("{}", e);
                 return Err(RemoveFromFileErr::WriteFileErr);
             }
-        };
-
-        Ok(RemoveFromFileResult::NoChange)
+        }
     }
 }
 
@@ -274,7 +297,11 @@ pub fn read_license() -> Result<License, ReadLicenseErr> {
     let read_result = fs::read_to_string(LICENSE_PATH);
 
     match read_result {
-        Ok(str) => return Ok(License { raw_text: str }),
+        Ok(str) => {
+            return Ok(License {
+                raw_text: str.trim().to_string(),
+            })
+        }
         Err(_) => return Err(ReadLicenseErr::FileReadErr),
     }
 }

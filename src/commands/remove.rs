@@ -1,3 +1,27 @@
+// remove.rs
+
+// MIT License
+
+// Copyright (c) 2022 Ken Zhou
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 use chrono;
 use chrono::Datelike;
 
@@ -8,7 +32,7 @@ use ignore::Walk;
 
 use colored::*;
 
-pub fn execute() {
+pub fn execute(verbose: bool) {
     let config: Config;
     match load_config() {
         Ok(cfg) => config = cfg,
@@ -96,9 +120,22 @@ pub fn execute() {
                     Ok(r) => {
                         match r {
                             RemoveFromFileResult::Removed => {
+                                if verbose {
+                                    println!(
+                                        "(ok) Removed license header - {}",
+                                        entry.path().display()
+                                    )
+                                }
                                 changed_files_count += 1;
                             }
-                            _ => {}
+                            RemoveFromFileResult::NoChange => {
+                                if verbose {
+                                    println!(
+                                        "(skipped) No matching header to remove - {}",
+                                        entry.path().display()
+                                    )
+                                }
+                            }
                         };
                     }
                     Err(e) => {
@@ -110,7 +147,10 @@ pub fn execute() {
         }
     }
 
-    let status_str = format!("✔ Added license header to {} files.", changed_files_count);
+    let status_str = format!(
+        "✔ Removed license header from {} files.",
+        changed_files_count
+    );
     let status_str_colored = status_str.green();
 
     println!("{}", status_str_colored);
