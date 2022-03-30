@@ -37,7 +37,7 @@ jobs:
     - name: Create build directories
       run: mkdir -p builds/licensesnip-win64; mkdir -p builds/licensesnip-linux; mkdir -p builds/licensesnip-macos
     - name: Copy builds into build directories
-      run: cp target/x86_64-pc-windows-gnu/release/licensesnip.exe builds/licensesnip-win64; cp target/x86_64-unknown-linux-gnu/release/licensesnip.exe builds/licensesnip-linux; cp target/x86_64-apple-darwin/release/licensesnip.exe builds/licensesnip-macos #; cp target/i686-pc-windows-msvc/release/licensesnip.exe builds/licensesnip-win32   
+      run: dir target; cp target/x86_64-pc-windows-gnu/release/licensesnip.exe builds/licensesnip-win64; cp target/release/licensesnip.exe builds/licensesnip-linux #; cp target/x86_64-apple-darwin/release/licensesnip.exe builds/licensesnip-macos #; cp target/i686-pc-windows-msvc/release/licensesnip.exe builds/licensesnip-win32   
     - name: Zip builds into tar.gz
       run: tar -C builds -czvf licensesnip-win64.tar.gz licensesnip-win64; tar -C builds -czvf licensesnip-linux.tar.gz licensesnip-linux #; tar -C builds -czvf licensesnip-macos.tar.gz licensesnip-macos #; tar -C builds -czvf licensesnip-win32.tar.gz licensesnip-win32 
     - name: Check dir
