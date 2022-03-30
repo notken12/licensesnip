@@ -22,7 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
 use crate::config::FileTypeConfig;
 use ignore::DirEntry;
 use mktemp::Temp;
@@ -32,6 +31,7 @@ use std::{
     io::Write,
     io::{self, BufReader, Read},
     path::Path,
+    str::Bytes,
 };
 
 const LICENSE_PATH: &str = ".licensesnip";
@@ -157,7 +157,7 @@ impl License {
                 let mut line_text = cfg.before_line.clone();
                 line_text.push_str(line);
 
-                text.push_str(&line_text);
+                text.push_str(&line_text.trim_end());
             }
         }
 
@@ -179,36 +179,11 @@ impl License {
             Err(_) => return Err(AddToFileErr::ReadFileErr),
         };
 
+        let mut h_bytes = header_text.bytes();
         let mut f_bytes = file_text.bytes();
 
-        let mut should_add = false;
-
-        let mut count = 0;
-
-        for h_byte in header_text.bytes() {
-            let f_byte = match f_bytes.next() {
-                Some(c) => c,
-                None => {
-                    // Reached the end of file
-                    should_add = true;
-                    break;
-                }
-            };
-            if f_byte != h_byte {
-                // Check if its a line-ending problem
-                // LF vs CRLF
-                // Skip CR, go to LF
-                if f_byte == 13 && h_byte == 10 {
-                    let _ = f_bytes.next();
-                    count += 1;
-                    continue;
-                }
-                should_add = true;
-                println!("expected {}, received {} at byte {}", h_byte, f_byte, count);
-                break;
-            }
-            count += 1;
-        }
+        let f_match = file_has_matching_header(&mut h_bytes, &mut f_bytes);
+        let should_add = !f_match.matching;
 
         if should_add {
             let mut text_to_add = header_text.clone();
@@ -239,27 +214,13 @@ impl License {
             Err(_) => return Err(RemoveFromFileErr::ReadFileErr),
         };
 
+        let mut h_bytes = header_text.bytes();
         let mut f_bytes = file_text.bytes();
 
-        let mut should_remove = true;
-        let mut r_count: u32 = 0;
+        let f_match = file_has_matching_header(&mut h_bytes, &mut f_bytes);
+        let should_remove = f_match.matching;
 
-        // Remove if the top of the file matches the header text
-        for h_byte in header_text.bytes() {
-            let f_byte = match f_bytes.next() {
-                Some(c) => c,
-                None => {
-                    // Reached the end of file
-                    should_remove = false;
-                    break;
-                }
-            };
-            if f_byte != h_byte {
-                should_remove = false;
-                break;
-            }
-            r_count += 1;
-        }
+        let mut r_count: u32 = f_match.header_len;
 
         if !should_remove {
             return Ok(RemoveFromFileResult::NoChange);
@@ -275,14 +236,14 @@ impl License {
                 }
             };
 
-            if f_byte != b'\n' {
+            if f_byte != 13 && f_byte != 10 {
                 break;
             }
 
             r_count += 1;
         }
 
-        // add to top of file
+        // remove from top of file
         match remove_first_chars(r_count, &path) {
             Ok(_) => return Ok(RemoveFromFileResult::Removed),
             Err(e) => {
@@ -290,6 +251,54 @@ impl License {
                 return Err(RemoveFromFileErr::WriteFileErr);
             }
         }
+    }
+}
+
+struct MatchingHeaderResult {
+    matching: bool,
+    header_len: u32,
+}
+
+fn file_has_matching_header(h_bytes: &mut Bytes, f_bytes: &mut Bytes) -> MatchingHeaderResult {
+    let mut has = true;
+    let mut f_header_len = 0;
+
+    loop {
+        let h_byte = match h_bytes.next() {
+            Some(b) => b,
+            None => {
+                break;
+            }
+        };
+        let f_byte = match f_bytes.next() {
+            Some(b) => b,
+            None => {
+                // Reached the end of file
+                has = false;
+                break;
+            }
+        };
+        if f_byte != h_byte {
+            // Check if its a line-ending problem
+            // LF vs CRLF
+            // Skip CR, go to LF
+            if f_byte == 13 && h_byte == 10 {
+                let _ = f_bytes.next();
+                f_header_len += 2;
+                continue;
+            } else if f_byte == 10 && h_byte == 13 {
+                let _ = h_bytes.next();
+                continue;
+            }
+            has = false;
+            break;
+        }
+        f_header_len += 1;
+    }
+
+    MatchingHeaderResult {
+        matching: has,
+        header_len: f_header_len,
     }
 }
 
