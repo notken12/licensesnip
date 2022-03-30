@@ -30,8 +30,8 @@ jobs:
       run: cargo build --release #--target=x86_64-unknown-linux-gnu
     - name: Add build target for MacOS
       run: rustup target add x86_64-apple-darwin
-    - name: Build for MacOS
-      run: cross build --release --target=x86_64-apple-darwin
+#     - name: Build for MacOS
+#       run: cross build --release --target=x86_64-apple-darwin
     - name: Run tests
       run: cargo test --verbose
     - name: Create build directories
@@ -39,7 +39,7 @@ jobs:
     - name: Copy builds into build directories
       run: cp target/x86_64-pc-windows-gnu/release/licensesnip.exe builds/licensesnip-win64; cp target/x86_64-unknown-linux-gnu/release/licensesnip.exe builds/licensesnip-linux; cp target/x86_64-apple-darwin/release/licensesnip.exe builds/licensesnip-macos #; cp target/i686-pc-windows-msvc/release/licensesnip.exe builds/licensesnip-win32   
     - name: Zip builds into tar.gz
-      run: tar -C builds -czvf licensesnip-win64.tar.gz licensesnip-win64; tar -C builds -czvf licensesnip-linux.tar.gz licensesnip-linux; tar -C builds -czvf licensesnip-macos.tar.gz licensesnip-macos #; tar -C builds -czvf licensesnip-win32.tar.gz licensesnip-win32 
+      run: tar -C builds -czvf licensesnip-win64.tar.gz licensesnip-win64; tar -C builds -czvf licensesnip-linux.tar.gz licensesnip-linux #; tar -C builds -czvf licensesnip-macos.tar.gz licensesnip-macos #; tar -C builds -czvf licensesnip-win32.tar.gz licensesnip-win32 
     - name: Check dir
       run: dir; dir builds; dir builds/x86_64-pc-windows-gnu
     - name: Upload Windows build
