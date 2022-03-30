@@ -11,6 +11,15 @@
     },
     "rs": {
       "before_line": "// "
+    },
+    "css,scss": {
+      "before_line": "// "
+    },
+    "py,ipynb": {
+      "before_line": "# "
+    },
+    "c,cpp": {
+      "before_line": "// "
     }
   }
 }
