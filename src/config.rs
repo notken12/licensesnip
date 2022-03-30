@@ -1,4 +1,4 @@
-// config.rs copyright 2022 
+// config.rs copyright 2022
 // balh blah blah
 
 // mog
@@ -11,9 +11,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub static DEFAULT_CONFIG: &'static str = include_str!("default-config.json");
-pub static BASE_CONFIG: &'static str = include_str!("base-config.json");
-pub const CFG_PATH: &str = "licensesnip.config.json";
+pub static DEFAULT_CONFIG: &'static str = include_str!("default-config.jsonc");
+pub static BASE_CONFIG: &'static str = include_str!("base-config.jsonc");
+pub const CFG_PATH: &str = "licensesnip.config.jsonc";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileTypeConfig {
