@@ -16,18 +16,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install cross
+      run: cargo install cross
+    - name: Start cross
+      run: sudo systemctl start docker
     - name: Add build targets for Windows
       run: rustup target add x86_64-pc-windows-gnu; rustup target add i686-pc-windows-msvc
     - name: Build for Windows
-      run: cargo build --release --target=x86_64-pc-windows-gnu; cargo build --release --target=i686-pc-windows-msvc
+      run: cross build --release --target=x86_64-pc-windows-gnu; cross build --release --target=i686-pc-windows-msvc
     - name: Add build target for Linux
       run: rustup target add x86_64-unknown-linux-gnu
     - name: Build for Linux
-      run: cargo build --release --target=x86_64-unknown-linux-gnu
+      run: cross build --release --target=x86_64-unknown-linux-gnu
     - name: Add build target for MacOS
       run: rustup target add x86_64-apple-darwin
     - name: Build for MacOS
-      run: cargo build --release --target=x86_64-apple-darwin
+      run: cross build --release --target=x86_64-apple-darwin
     - name: Run tests
       run: cargo test --verbose
     - name: Create build directories
@@ -36,6 +40,8 @@ jobs:
       run: cp target/x86_64-pc-windows-gnu/release/licensesnip.exe builds/licensesnip-win64; cp target/i686-pc-windows-msvc/release/licensesnip.exe builds/licensesnip-win32; cp target/x86_64-unknown-linux-gnu/release/licensesnip.exe builds/licensesnip-linux; cp target/x86_64-apple-darwin/release/licensesnip.exe builds/licensesnip-macos;  
     - name: Zip builds into tar.gz
       run: tar -C builds -czvf licensesnip-win64.tar.gz licensesnip-win64; tar -C builds -czvf licensesnip-win32.tar.gz licensesnip-win32; tar -C builds -czvf licensesnip-linux.tar.gz licensesnip-linux; tar -C builds -czvf licensesnip-macos.tar.gz licensesnip-macos
+    - name: Check dir
+      run: dir; dir builds; dir builds/x86_64-pc-windows-gnu
     - name: Upload Windows build
       uses: actions/upload-artifact@v2.3.1
       with:
