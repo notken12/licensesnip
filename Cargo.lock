@@ -237,6 +237,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efaa7b300f3b5fe8eb6bf21ce3895e1751d9665086af2d64b42f19701015ff4f"
 
 [[package]]
+name = "licensesnip"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "colored",
+ "directories",
+ "exitcode",
+ "ignore",
+ "mktemp",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "log"
 version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -258,21 +273,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "975de676448231fcde04b9149d2543077e166b78fc29eae5aa219e7928410da2"
 dependencies = [
  "uuid",
-]
-
-[[package]]
-name = "my-project"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "colored",
- "directories",
- "exitcode",
- "ignore",
- "mktemp",
- "serde",
- "serde_json",
 ]
 
 [[package]]
