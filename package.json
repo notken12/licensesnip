@@ -1,0 +1,30 @@
+{
+  "name": "licensesnip",
+  "version": "1.0.0",
+  "description": "Tool to automatically add license headers to your source code. Customizable for any language using a config file.",
+  "main": "index.js",
+  "bin": {
+    "my-program": "./npm/run.js"
+  },
+  "scripts": {
+    "postinstall": "node npm/install.js",
+    "preinstall": "node npm/uninstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/notken12/licensesnip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/notken12/licensesnip/issues"
+  },
+  "homepage": "https://github.com/notken12/licensesnip#readme",
+  "dependencies": {
+    "binary-install": "^0.1.1"
+  },
+  "files": [
+    "npm/**/*"
+  ]
+}
