@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 function getBinary() {
   try {
     const getBinary = require("./getBinary");
@@ -7,5 +9,9 @@ function getBinary() {
 
 const binary = getBinary();
 if (binary) {
-  binary.uninstall();
+  try {
+    fs.unlinkSync(binary.binaryPath);
+  } catch (err) {
+    
+  }
 }
