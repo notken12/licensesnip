@@ -50,13 +50,13 @@ jobs:
       - name: Create builds directory
         run: mkdir -p builds/licensesnip-win64
       - name: Check dir
-        run: dir target/release
+        run: ls target/release
       - name: Copy build into builds directory
         run: cp target/release/licensesnip.exe build
       - name: Zip build into tar.gz
         run: tar -C builds -czvf licensesnip-win64.tar.gz licensesnip-win64
       - name: Check dir
-        run: dir; dir builds; dir builds/licensesnip-win64
+        run: ls; ls builds; ls builds/licensesnip-win64
       - name: Upload build
         uses: actions/upload-artifact@v2.3.1
         with:
@@ -78,13 +78,13 @@ jobs:
       - name: Create builds directory
         run: mkdir -p builds/licensesnip-macos
       - name: Check dir
-        run: dir target/release
+        run: ls target/release
       - name: Copy build into builds directory
         run: cp target/release/licensesnip build
       - name: Zip build into tar.gz
         run: tar -C builds -czvf licensesnip-macos.tar.gz licensesnip-macos
       - name: Check dir
-        run: dir; dir builds; dir builds/licensesnip-macos
+        run: ls; ls builds; ls builds/licensesnip-macos
       - name: Upload build
         uses: actions/upload-artifact@v2.3.1
         with:
