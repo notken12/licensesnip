@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cross build --release
+        run: cargo build --release
       - name: Run tests
         run: cargo test --verbose
       - name: Create builds directory
@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cross build --release
+        run: cargo build --release
       - name: Run tests
         run: cargo test --verbose
       - name: Create builds directory
@@ -68,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cross build --release
+        run: cargo build --release
       - name: Run tests
         run: cargo test --verbose
       - name: Create builds directory
