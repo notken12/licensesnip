@@ -17,9 +17,10 @@ function getPlatform() {
 
 function getBinary() {
   const version = require("../package.json").version;
-  const url = `https://github.com/notken12/licensesnip/releases/download/v${version}/licensesnip-win64.tar.gz`;
+  const platform = getPlatform();
+  const url = `https://github.com/notken12/licensesnip/releases/download/v${version}/licensesnip-${platform}.tar.gz`;
   const name = "licensesnip";
-  return new Binary(url, { name });
+  return new Binary(name, url);
 }
 
 module.exports = getBinary;
