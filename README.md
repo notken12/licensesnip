@@ -7,8 +7,3 @@ Tool to automatically add license headers to your source code. Customizable for 
 ```
 cargo install licensesnip
 ```
-
-### With NPM
-```
-npm install licensesnip
-```
