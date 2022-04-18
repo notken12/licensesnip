@@ -13,7 +13,9 @@
       "before_line": "// "
     },
     "css,scss": {
-      "before_line": "// "
+      "before_block": "/*",
+      "before_line": "  ",
+      "after_block":"*/"
     },
     "py,ipynb": {
       "before_line": "# "
