@@ -31,7 +31,7 @@ licensesnip remove
 
 Find your global Licensesnip config file:
 ```bash
-licensesip config
+licensesnip config
 ```
 
 Create/find the local config file for the current directory:
