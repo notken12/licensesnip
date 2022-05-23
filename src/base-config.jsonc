@@ -9,7 +9,7 @@
       "before_line": "  ",
       "after_block": "-->"
     },
-    "gitignore|npmignore|eslintignore|dockerignore|sh": {
+    "gitignore,npmignore,eslintignore,dockerignore,sh": {
       "# "
     },
     "rs": {
