@@ -22,14 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use crate::config::{load_config, Config, LoadConfigErr};
+use std::collections::HashMap;
+
+use colored::Colorize;
+use ignore::Walk;
+
+use crate::{
+    config::{load_config, Config, FileTypeConfig, LoadConfigErr},
+    license::{read_license, License, ReadLicenseErr},
+};
 
 pub fn f_load_config() -> Config {
     match load_config() {
         Ok(cfg) => cfg,
         Err(e) => match e {
             LoadConfigErr::JsonFormattingErr(e) => {
-                println!("Error: Your config file wasn't formatted correctly:\n {}", e);
+                println!(
+                    "Error: Your config file wasn't formatted correctly:\n {}",
+                    e
+                );
                 std::process::exit(exitcode::CONFIG);
             }
             LoadConfigErr::CreateDefaultConfigErr => {
@@ -42,5 +53,131 @@ pub fn f_load_config() -> Config {
             }
             LoadConfigErr::NotFoundErr => std::process::exit(exitcode::IOERR),
         },
+    }
+}
+
+pub fn f_read_license() -> License {
+    match read_license() {
+        Ok(l) => l,
+        Err(e) => match e {
+            ReadLicenseErr::FileReadErr => {
+                println!("{}", "Error: Couldn't find a .licensesnip file in the current working directory's root.".red());
+                std::process::exit(exitcode::CONFIG)
+            }
+        },
+    }
+}
+
+pub struct FileWalk {
+    ignore_walk: Walk,
+    verbose: bool,
+    filetype_map: HashMap<String, FileTypeConfig>,
+    pub matched_filetypes_count: u32,
+    license: License,
+    year: i32,
+}
+
+impl FileWalk {
+    pub fn new(path: &str, config: Config, license: License, year: i32, verbose: bool) -> Self {
+        let filetype_map = config.get_filetype_map();
+        Self {
+            ignore_walk: Walk::new(path),
+            verbose,
+            filetype_map,
+            license,
+            year,
+            matched_filetypes_count: 0,
+        }
+    }
+}
+
+pub struct FileData {
+    pub formatted_lines: Vec<String>,
+    pub header_text: String,
+    pub entry: ignore::DirEntry,
+}
+
+impl Iterator for FileWalk {
+    type Item = FileData;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(n) = self.ignore_walk.next() {
+            match n {
+                Ok(entry) => {
+                    match entry.file_type() {
+                        Some(t) => {
+                            if !t.is_file() {
+                                return self.next();
+                            }
+                        }
+                        None => return self.next(),
+                    }
+
+                    // Get file extension
+                    let file_name = entry.file_name().to_string_lossy();
+                    let ext;
+                    match file_name.split(".").last() {
+                        Some(e) => ext = e,
+                        None => {
+                            if self.verbose {
+                                println!(
+                                    "(skipped) Invalid file extension - {}",
+                                    entry.path().display()
+                                )
+                            }
+                            return self.next();
+                        }
+                    }
+
+                    let filetype_cfg = match self.filetype_map.get(ext) {
+                        Some(e) => {
+                            self.matched_filetypes_count += 1;
+                            e
+                        }
+                        None => {
+                            // No configuration for this file type
+                            if self.verbose {
+                                println!(
+                                    "(skipped) No file type configuration found for .{} - {}",
+                                    ext,
+                                    entry.path().display()
+                                );
+                            }
+
+                            return self.next();
+                        }
+                    };
+
+                    if !filetype_cfg.enable {
+                        // Disabled for this filetype
+                        if self.verbose {
+                            println!(
+                                "(skipped) Inserting header is disabled for .{} files - {}",
+                                ext,
+                                entry.path().display()
+                            )
+                        }
+                        return self.next();
+                    }
+
+                    let raw_lines = self.license.get_lines();
+
+                    let f_lines = License::get_formatted_lines(&raw_lines, &file_name, self.year);
+
+                    let header_text = License::get_header_text(&f_lines, filetype_cfg);
+
+                    return Some(FileData {
+                        formatted_lines: f_lines,
+                        header_text,
+                        entry,
+                    });
+                }
+                Err(err) => {
+                    println!("ERROR: {}", err);
+                    return self.next();
+                }
+            }
+        }
+        None
     }
 }
