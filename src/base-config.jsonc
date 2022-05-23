@@ -4,15 +4,18 @@
     "js,mjs,ts,cjs,jsx,tsx": {
       "before_line": "// "
     },
-    "vue": {
+    "vue,html,xml,svg": {
       "before_block": "<!--",
       "before_line": "  ",
       "after_block": "-->"
     },
+    "gitignore|npmignore|eslintignore|dockerignore|sh": {
+      "# "
+    },
     "rs": {
       "before_line": "// "
     },
-    "css,scss": {
+    "css,scss,less": {
       "before_block": "/*",
       "before_line": "  ",
       "after_block":"*/"
@@ -20,7 +23,7 @@
     "py,ipynb": {
       "before_line": "# "
     },
-    "c,cpp": {
+    "c,cpp,php,as,java,go,cto,acl": {
       "before_line": "// "
     }
   }
