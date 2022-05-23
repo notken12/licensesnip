@@ -101,7 +101,7 @@ impl PartialConfig {
     pub fn base() -> Result<Self, LoadConfigErr> {
         match serde_json::from_str(&BASE_CONFIG) {
             Ok(config) => return Ok(config),
-            Err(_) => return Err(LoadConfigErr::JsonFormattingErr),
+            Err(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
         }
     }
 
@@ -129,7 +129,7 @@ impl PartialConfig {
 
         match serde_json::from_str(&file_text) {
             Ok(config) => return Ok(config),
-            Err(_) => return Err(LoadConfigErr::JsonFormattingErr),
+            Err(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
         }
     }
 
@@ -157,7 +157,7 @@ fn get_true() -> bool {
 }
 
 pub enum LoadConfigErr {
-    JsonFormattingErr,
+    JsonFormattingErr(serde_json::Error),
     CreateDefaultConfigErr,
     LoadUserConfigErr,
     NotFoundErr,
@@ -177,7 +177,7 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
     let cwd_config = match PartialConfig::from_path(&Path::new(CFG_PATH), false) {
         Ok(c) => Some(c),
         Err(e) => match e {
-            LoadConfigErr::JsonFormattingErr => return Err(e),
+            LoadConfigErr::JsonFormattingErr(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
             _ => None,
         },
     };

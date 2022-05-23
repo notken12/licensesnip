@@ -1,4 +1,4 @@
-// remove.rs
+// check.rs
 //
 // MIT License
 //
@@ -25,9 +25,8 @@
 use chrono;
 use chrono::Datelike;
 
-use crate::license::{read_license, License, ReadLicenseErr, RemoveFromFileResult};
-
 use crate::frontend::f_load_config;
+use crate::license::{read_license, License, ReadLicenseErr};
 
 use ignore::Walk;
 
@@ -42,7 +41,7 @@ pub fn execute(verbose: bool) {
         Ok(l) => license = l,
         Err(e) => match e {
             ReadLicenseErr::FileReadErr => {
-                println!("Error: Couldn't find a .licensesnip file in the current working directory's root.");
+                println!("{}", "Error: Couldn't find a .licensesnip file in the current working directory's root.".red());
                 std::process::exit(exitcode::CONFIG)
             }
         },
@@ -50,7 +49,7 @@ pub fn execute(verbose: bool) {
 
     let filetype_map = config.get_filetype_map();
 
-    let mut changed_files_count: u32 = 0;
+    let mut checked_files_count: u32 = 0;
     let mut matched_filetypes_count: u32 = 0;
 
     let year = chrono::Utc::now().date().year();
@@ -74,7 +73,15 @@ pub fn execute(verbose: bool) {
                 let ext;
                 match file_name.split(".").last() {
                     Some(e) => ext = e,
-                    None => return,
+                    None => {
+                        if verbose {
+                            println!(
+                                "(skipped) Invalid file extension - {}",
+                                entry.path().display()
+                            )
+                        }
+                        return;
+                    }
                 }
 
                 let filetype_cfg = match filetype_map.get(ext) {
@@ -84,12 +91,27 @@ pub fn execute(verbose: bool) {
                     }
                     None => {
                         // No configuration for this file type
+                        if verbose {
+                            println!(
+                                "(skipped) No file type configuration found for .{} - {}",
+                                ext,
+                                entry.path().display()
+                            );
+                        }
+
                         return;
                     }
                 };
 
                 if !filetype_cfg.enable {
                     // Disabled for this filetype
+                    if verbose {
+                        println!(
+                            "(skipped) Inserting header is disabled for .{} files - {}",
+                            ext,
+                            entry.path().display()
+                        )
+                    }
                     return;
                 }
 
@@ -99,27 +121,20 @@ pub fn execute(verbose: bool) {
 
                 let header_text = License::get_header_text(&f_lines, filetype_cfg);
 
-                match License::remove_from_file(&entry, &header_text) {
+                match License::check_file(&entry, &header_text) {
                     Ok(r) => {
-                        match r {
-                            RemoveFromFileResult::Removed => {
-                                if verbose {
-                                    println!(
-                                        "(ok) Removed license header - {}",
-                                        entry.path().display()
-                                    )
-                                }
-                                changed_files_count += 1;
+                        if r {
+                            if verbose {
+                                println!(
+                                    "(ok) License header present - {}",
+                                    entry.path().display()
+                                );
                             }
-                            RemoveFromFileResult::NoChange => {
-                                if verbose {
-                                    println!(
-                                        "(skipped) No matching header to remove - {}",
-                                        entry.path().display()
-                                    )
-                                }
-                            }
-                        };
+                            checked_files_count += 1;
+                        } else {
+                            println!("(err) License header missing - {}. \nDid you forget to run `licensesnip`?", entry.path().display());
+                            std::process::exit(1);
+                        }
                     }
                     Err(e) => {
                         println!("{:?}", e)
@@ -131,8 +146,8 @@ pub fn execute(verbose: bool) {
     }
 
     let status_str = format!(
-        "✔ Removed license header from {} files.",
-        changed_files_count
+        "✔ License header present in all {} files.",
+        checked_files_count
     );
     let status_str_colored = status_str.green();
 

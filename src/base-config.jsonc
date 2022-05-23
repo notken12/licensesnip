@@ -10,7 +10,7 @@
       "after_block": "-->"
     },
     "gitignore,npmignore,eslintignore,dockerignore,sh": {
-      "# "
+      "before_line": "# "
     },
     "rs": {
       "before_line": "// "

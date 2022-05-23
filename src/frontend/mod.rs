@@ -22,47 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-pub mod check;
-pub mod config;
-pub mod default;
-pub mod remove;
+use crate::config::{load_config, Config, LoadConfigErr};
 
-use clap::{Parser, Subcommand};
-
-// Note: this requires the `derive` feature
-#[derive(Parser)]
-#[clap(name = "licensesnip")]
-#[clap(bin_name = "licensesnip")]
-pub struct Cli {
-    // Whether to display extra detailed output
-    #[clap(short, long)]
-    pub verbose: bool,
-
-    #[clap(subcommand)]
-    pub command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-pub enum Commands {
-    /// Get path to config file
-    #[clap(arg_required_else_help = false)]
-    Config {
-        /// Get path of directory's local config
-        #[clap(short, long)]
-        directory: bool,
-    },
-    /// Remove all license headers from directory files
-    #[clap(arg_required_else_help = false)]
-    Remove {
-        /// Display more information
-        #[clap(short, long)]
-        verbose: bool,
-    },
-    /// Check if license header exists in files
-    #[clap(arg_required_else_help = false)]
-    Check {
-        /// Display more information
-        #[clap(short, long)]
-        verbose: bool,
-    },
+pub fn f_load_config() -> Config {
+    match load_config() {
+        Ok(cfg) => cfg,
+        Err(e) => match e {
+            LoadConfigErr::JsonFormattingErr(e) => {
+                println!("Error: Your config file wasn't formatted correctly:\n {}", e);
+                std::process::exit(exitcode::CONFIG);
+            }
+            LoadConfigErr::CreateDefaultConfigErr => {
+                println!("Error: Failed to create default config file.");
+                std::process::exit(exitcode::IOERR)
+            }
+            LoadConfigErr::LoadUserConfigErr => {
+                println!("Error: failed to load user config file.");
+                std::process::exit(exitcode::IOERR)
+            }
+            LoadConfigErr::NotFoundErr => std::process::exit(exitcode::IOERR),
+        },
+    }
 }

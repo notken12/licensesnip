@@ -24,6 +24,7 @@
 
 pub mod config;
 pub mod license;
+pub mod frontend;
 
 mod commands;
 use clap::Parser;
@@ -37,6 +38,7 @@ fn main() {
         match command {
             Commands::Config { directory } => commands::config::execute(*directory),
             Commands::Remove { verbose } => commands::remove::execute(*verbose),
+            Commands::Check { verbose } => commands::check::execute(*verbose),
         };
     } else {
         commands::default::execute(*&args.verbose);

@@ -169,10 +169,7 @@ impl License {
         text
     }
 
-    pub fn add_to_file(
-        ent: &DirEntry,
-        header_text: &String,
-    ) -> Result<AddToFileResult, AddToFileErr> {
+    pub fn check_file(ent: &DirEntry, header_text: &String) -> Result<bool, AddToFileErr> {
         let path = ent.path();
         let file_text = match fs::read_to_string(path) {
             Ok(s) => s,
@@ -183,9 +180,15 @@ impl License {
         let mut f_bytes = file_text.bytes();
 
         let f_match = file_has_matching_header(&mut h_bytes, &mut f_bytes);
-        let should_add = !f_match.matching;
+        Ok(f_match.matching)
+    }
 
-        if should_add {
+    pub fn add_to_file(
+        ent: &DirEntry,
+        header_text: &String,
+    ) -> Result<AddToFileResult, AddToFileErr> {
+        if !Self::check_file(ent, header_text)? {
+            let path = ent.path();
             let mut text_to_add = header_text.clone();
             text_to_add.push_str("\n\n");
 

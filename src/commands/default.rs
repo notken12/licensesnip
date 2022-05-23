@@ -25,7 +25,7 @@
 use chrono;
 use chrono::Datelike;
 
-use crate::config::{load_config, Config, LoadConfigErr};
+use crate::frontend::f_load_config;
 use crate::license::{read_license, AddToFileResult, License, ReadLicenseErr};
 
 use ignore::Walk;
@@ -33,28 +33,7 @@ use ignore::Walk;
 use colored::*;
 
 pub fn execute(verbose: bool) {
-    let config: Config;
-    match load_config() {
-        Ok(cfg) => config = cfg,
-        Err(e) => match e {
-            LoadConfigErr::JsonFormattingErr => {
-                println!(
-                    "{}",
-                    "Error: Your config file wasn't formatted correctly.".red()
-                );
-                std::process::exit(exitcode::CONFIG);
-            }
-            LoadConfigErr::CreateDefaultConfigErr => {
-                println!("{}", "Error: Failed to create default config file.".red());
-                std::process::exit(exitcode::IOERR)
-            }
-            LoadConfigErr::LoadUserConfigErr => {
-                println!("{}", "Error: failed to load user config file.".red());
-                std::process::exit(exitcode::IOERR)
-            }
-            LoadConfigErr::NotFoundErr => std::process::exit(exitcode::IOERR),
-        },
-    };
+    let config = f_load_config();
 
     let license: License;
 
