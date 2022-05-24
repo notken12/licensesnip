@@ -27,6 +27,12 @@ To remove license headers from all source code:
 licensesnip remove
 ```
 
+To check if license headers are present in all of your source files:
+
+```bash
+licensesnip check
+```
+
 ## ⚙️ Configuration
 
 Find your global Licensesnip config file:
