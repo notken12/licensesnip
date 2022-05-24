@@ -27,11 +27,11 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::clone::Clone;
 use std::collections::HashMap;
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fmt, fs};
 
-pub static DEFAULT_CONFIG: &'static str = include_str!("default-config.jsonc");
-pub static BASE_CONFIG: &'static str = include_str!("base-config.jsonc");
+pub static DEFAULT_CONFIG: &str = include_str!("default-config.jsonc");
+pub static BASE_CONFIG: &str = include_str!("base-config.jsonc");
 pub const CFG_PATH: &str = "licensesnip.config.jsonc";
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -58,7 +58,7 @@ impl Config {
     pub fn get_filetype_map(&self) -> HashMap<String, FileTypeConfig> {
         let mut map = HashMap::<String, FileTypeConfig>::new();
         for (types, config) in &self.file_types {
-            let split = types.split(",");
+            let split = types.split(',');
             for extension in split {
                 map.insert(extension.to_string(), config.clone());
             }
@@ -99,9 +99,9 @@ pub struct PartialConfig {
 
 impl PartialConfig {
     pub fn base() -> Result<Self, LoadConfigErr> {
-        match serde_json::from_str(&BASE_CONFIG) {
-            Ok(config) => return Ok(config),
-            Err(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
+        match serde_json::from_str(BASE_CONFIG) {
+            Ok(config) => Ok(config),
+            Err(e) => Err(LoadConfigErr::JsonFormattingErr(e)),
         }
     }
 
@@ -128,8 +128,8 @@ impl PartialConfig {
         }
 
         match serde_json::from_str(&file_text) {
-            Ok(config) => return Ok(config),
-            Err(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
+            Ok(config) => Ok(config),
+            Err(e) => Err(LoadConfigErr::JsonFormattingErr(e)),
         }
     }
 
@@ -174,7 +174,7 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
         Err(e) => return Err(e),
     };
 
-    let cwd_config = match PartialConfig::from_path(&Path::new(CFG_PATH), false) {
+    let cwd_config = match PartialConfig::from_path(Path::new(CFG_PATH), false) {
         Ok(c) => Some(c),
         Err(e) => match e {
             LoadConfigErr::JsonFormattingErr(e) => return Err(LoadConfigErr::JsonFormattingErr(e)),
@@ -182,10 +182,8 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
         },
     };
 
-    let base;
-
-    match PartialConfig::base() {
-        Ok(d) => base = Config::assign_partial(&Config::default(), &d),
+    let base = match PartialConfig::base() {
+        Ok(d) => Config::assign_partial(&Config::default(), &d),
         Err(e) => return Err(e),
     };
 
@@ -222,19 +220,28 @@ fn create_default_config(path: &Path) -> Result<(), CreateDefaultConfigErr> {
     }
 }
 
-pub fn user_config_path() -> Result<PathBuf, ()> {
-    let config_dir;
+#[derive(Debug)]
+pub struct NoConfigDirErr;
 
+impl fmt::Display for NoConfigDirErr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Couldn't get user's config path")
+    }
+}
+
+impl std::error::Error for NoConfigDirErr {}
+
+pub fn user_config_path() -> Result<PathBuf, NoConfigDirErr> {
     let proj_dirs;
 
-    if let Some(p) = ProjectDirs::from("io", "notken12", "licensesnip") {
+    let config_dir = if let Some(p) = ProjectDirs::from("io", "notken12", "licensesnip") {
         proj_dirs = p;
-        config_dir = proj_dirs.config_dir()
+        proj_dirs.config_dir()
         // Linux:   /home/alice/.config/barapp
         // Windows: C:\Users\Alice\AppData\Roaming\Foo Corp\Bar App
         // macOS:   /Users/Alice/Library/Application Support/com.Foo-Corp.Bar-App
     } else {
-        return Err(());
+        return Err(NoConfigDirErr);
     };
 
     Ok(config_dir.join(CFG_PATH))

@@ -48,7 +48,7 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     // Open source file for reading
     let mut src = File::open(&file_path)?;
     // Write the data to prepend
-    tmp.write_all(&data)?;
+    tmp.write_all(data)?;
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
     fs::remove_file(&file_path)?;
@@ -108,7 +108,7 @@ pub struct License {
 
 impl License {
     pub fn get_formatted<Y: std::fmt::Display + Copy>(
-        raw_text: &String,
+        raw_text: &str,
         file_name: &str,
         year: Y,
     ) -> String {
@@ -124,13 +124,13 @@ impl License {
     ) -> Vec<String> {
         let mut vec = Vec::<String>::new();
         for str in lines {
-            vec.push(License::get_formatted(&str.to_string(), file_name, year))
+            vec.push(License::get_formatted(str, file_name, year))
         }
         vec
     }
 
     pub fn get_lines(&self) -> Vec<&str> {
-        self.raw_text.split("\n").collect::<Vec<&str>>()
+        self.raw_text.split('\n').collect::<Vec<&str>>()
     }
 
     pub fn get_header_text(lines: &Vec<String>, cfg: &FileTypeConfig) -> String {
@@ -157,7 +157,7 @@ impl License {
                 let mut line_text = cfg.before_line.clone();
                 line_text.push_str(line);
 
-                text.push_str(&line_text.trim_end());
+                text.push_str(line_text.trim_end());
             }
         }
 
@@ -169,7 +169,7 @@ impl License {
         text
     }
 
-    pub fn check_file(ent: &DirEntry, header_text: &String) -> Result<bool, AddToFileErr> {
+    pub fn check_file(ent: &DirEntry, header_text: &str) -> Result<bool, AddToFileErr> {
         let path = ent.path();
         let file_text = match fs::read_to_string(path) {
             Ok(s) => s,
@@ -183,17 +183,14 @@ impl License {
         Ok(f_match.matching)
     }
 
-    pub fn add_to_file(
-        ent: &DirEntry,
-        header_text: &String,
-    ) -> Result<AddToFileResult, AddToFileErr> {
+    pub fn add_to_file(ent: &DirEntry, header_text: &str) -> Result<AddToFileResult, AddToFileErr> {
         if !Self::check_file(ent, header_text)? {
             let path = ent.path();
-            let mut text_to_add = header_text.clone();
+            let mut text_to_add = header_text.to_owned();
             text_to_add.push_str("\n\n");
 
             // add to top of file
-            match prepend_file(text_to_add.as_bytes(), &path) {
+            match prepend_file(text_to_add.as_bytes(), path) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("{}", e);
@@ -209,7 +206,7 @@ impl License {
 
     pub fn remove_from_file(
         ent: &DirEntry,
-        header_text: &String,
+        header_text: &str,
     ) -> Result<RemoveFromFileResult, RemoveFromFileErr> {
         let path = ent.path();
         let file_text = match fs::read_to_string(path) {
@@ -230,15 +227,7 @@ impl License {
         }
 
         // Also remove trailing newlines
-        loop {
-            let f_byte = match f_bytes.next() {
-                Some(c) => c,
-                None => {
-                    // Reached the end of file
-                    break;
-                }
-            };
-
+        for f_byte in f_bytes {
             if f_byte != 13 && f_byte != 10 {
                 break;
             }
@@ -247,11 +236,11 @@ impl License {
         }
 
         // remove from top of file
-        match remove_first_chars(r_count, &path) {
-            Ok(_) => return Ok(RemoveFromFileResult::Removed),
+        match remove_first_chars(r_count, path) {
+            Ok(_) => Ok(RemoveFromFileResult::Removed),
             Err(e) => {
                 println!("{}", e);
-                return Err(RemoveFromFileErr::WriteFileErr);
+                Err(RemoveFromFileErr::WriteFileErr)
             }
         }
     }
@@ -266,13 +255,7 @@ fn file_has_matching_header(h_bytes: &mut Bytes, f_bytes: &mut Bytes) -> Matchin
     let mut has = true;
     let mut f_header_len = 0;
 
-    loop {
-        let h_byte = match h_bytes.next() {
-            Some(b) => b,
-            None => {
-                break;
-            }
-        };
+    while let Some(h_byte) = h_bytes.next() {
         let f_byte = match f_bytes.next() {
             Some(b) => b,
             None => {
@@ -336,6 +319,6 @@ pub fn read_license() -> Result<License, ReadLicenseErr> {
                 raw_text: str.trim().to_string(),
             })
         }
-        Err(_) => return Err(ReadLicenseErr::FileReadErr),
+        Err(_) => Err(ReadLicenseErr::FileReadErr),
     }
 }

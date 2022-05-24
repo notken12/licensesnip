@@ -115,9 +115,8 @@ impl Iterator for FileWalk {
 
                     // Get file extension
                     let file_name = entry.file_name().to_string_lossy();
-                    let ext;
-                    match file_name.split(".").last() {
-                        Some(e) => ext = e,
+                    let ext = match file_name.split('.').last() {
+                        Some(e) => e,
                         None => {
                             if self.verbose {
                                 println!(
@@ -127,7 +126,7 @@ impl Iterator for FileWalk {
                             }
                             return self.next();
                         }
-                    }
+                    };
 
                     let filetype_cfg = match self.filetype_map.get(ext) {
                         Some(e) => {

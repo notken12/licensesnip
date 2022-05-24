@@ -41,6 +41,6 @@ fn main() {
             Commands::Check { verbose } => commands::check::execute(*verbose),
         };
     } else {
-        commands::default::execute(*&args.verbose);
+        commands::default::execute(args.verbose);
     }
 }

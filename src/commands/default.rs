@@ -41,9 +41,6 @@ pub fn execute(verbose: bool) {
     let mut walk = FileWalk::new("./", config, license, year, verbose);
 
     for file_data in &mut walk {
-        // Each item yielded by the iterator is either a directory entry or an
-        // error, so either print the path or the error.
-
         let FileData {
             header_text,
             formatted_lines: _,
