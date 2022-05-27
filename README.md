@@ -42,7 +42,7 @@ licensesnip src/main.rs
 
 ```bash
 # Remove licenses from src folder
-licensesnip src/
+licensesnip remove src/
 ```
 
 ## ⚙️ Configuration
