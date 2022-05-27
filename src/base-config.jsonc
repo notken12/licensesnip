@@ -4,7 +4,7 @@
     "js,mjs,ts,cjs,jsx,tsx": {
       "before_line": "// "
     },
-    "vue,html,xml,svg": {
+    "vue,html": {
       "before_block": "<!--",
       "before_line": "  ",
       "after_block": "-->"
@@ -18,7 +18,7 @@
     "css,scss,less": {
       "before_block": "/*",
       "before_line": "  ",
-      "after_block":"*/"
+      "after_block": "*/"
     },
     "py,ipynb": {
       "before_line": "# "
