@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+use std::path::PathBuf;
+
 use chrono;
 use chrono::Datelike;
 
@@ -30,7 +32,11 @@ use crate::license::{AddToFileResult, License};
 
 use colored::*;
 
-pub fn execute(verbose: bool) {
+use super::Cli;
+
+pub fn execute(args: Cli) {
+    let verbose = args.verbose;
+    let file = args.file.unwrap_or(PathBuf::from("."));
     let config = f_load_config();
     let license = f_read_license();
 
@@ -38,7 +44,7 @@ pub fn execute(verbose: bool) {
 
     let year = chrono::Utc::now().date().year();
 
-    let mut walk = FileWalk::new("./", config, license, year, verbose);
+    let mut walk = FileWalk::new(file, config, license, year, verbose);
 
     for file_data in &mut walk {
         let FileData {

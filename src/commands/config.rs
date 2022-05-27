@@ -24,7 +24,13 @@
 
 use crate::config;
 
-pub fn execute(directory: bool) {
+use super::Commands;
+
+pub fn execute(args: Commands) {
+    let directory = match args {
+        Commands::Config { directory } => directory,
+        _ => panic!("Wrong command type"),
+    };
     if directory {
         if let Ok(cwd) = std::env::current_dir() {
             // Create a default config if it doesn't exist already

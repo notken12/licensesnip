@@ -33,6 +33,18 @@ To check if license headers are present in all of your source files:
 licensesnip check
 ```
 
+You can also specify a specific path or file to modify:
+
+```bash
+# Add licenses to src/main.rs
+licensesnip src/main.rs
+```
+
+```bash
+# Remove licenses from src folder
+licensesnip src/
+```
+
 ## ⚙️ Configuration
 
 Find your global Licensesnip config file:

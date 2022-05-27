@@ -27,6 +27,8 @@ pub mod config;
 pub mod default;
 pub mod remove;
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 // Note: this requires the `derive` feature
@@ -34,6 +36,8 @@ use clap::{Parser, Subcommand};
 #[clap(name = "licensesnip")]
 #[clap(bin_name = "licensesnip")]
 pub struct Cli {
+    /// The file(s) to add the license header to
+    pub file: Option<PathBuf>,
     // Whether to display extra detailed output
     #[clap(short, long)]
     pub verbose: bool,
@@ -54,6 +58,8 @@ pub enum Commands {
     /// Remove all license headers from directory files
     #[clap(arg_required_else_help = false)]
     Remove {
+        /// The file(s) to remove the license header to
+        file: Option<PathBuf>,
         /// Display more information
         #[clap(short, long)]
         verbose: bool,
@@ -61,6 +67,8 @@ pub enum Commands {
     /// Check if license header exists in files
     #[clap(arg_required_else_help = false)]
     Check {
+        /// The file(s) to check
+        file: Option<PathBuf>,
         /// Display more information
         #[clap(short, long)]
         verbose: bool,

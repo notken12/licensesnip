@@ -23,8 +23,8 @@
 // SOFTWARE.
 
 pub mod config;
-pub mod license;
 pub mod frontend;
+pub mod license;
 
 mod commands;
 use clap::Parser;
@@ -34,13 +34,13 @@ use commands::{Cli, Commands};
 fn main() {
     let args = Cli::parse();
 
-    if let Some(command) = &args.command {
+    if let Some(command) = args.command {
         match command {
-            Commands::Config { directory } => commands::config::execute(*directory),
-            Commands::Remove { verbose } => commands::remove::execute(*verbose),
-            Commands::Check { verbose } => commands::check::execute(*verbose),
+            Commands::Config { .. } => commands::config::execute(command),
+            Commands::Remove { .. } => commands::remove::execute(command),
+            Commands::Check { .. } => commands::check::execute(command),
         };
     } else {
-        commands::default::execute(args.verbose);
+        commands::default::execute(args);
     }
 }

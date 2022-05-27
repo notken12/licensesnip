@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+use std::path::PathBuf;
+
 use chrono;
 use chrono::Datelike;
 
@@ -30,7 +32,13 @@ use crate::license::License;
 
 use colored::*;
 
-pub fn execute(verbose: bool) {
+use super::Commands;
+
+pub fn execute(args: Commands) {
+    let (verbose, file) = match args {
+        Commands::Check { verbose, file } => (verbose, file.unwrap_or(PathBuf::from("."))),
+        _ => panic!("Wrong command type"),
+    };
     let config = f_load_config();
     let license = f_read_license();
 
@@ -38,7 +46,7 @@ pub fn execute(verbose: bool) {
 
     let year = chrono::Utc::now().date().year();
 
-    let mut walk = FileWalk::new("./", config, license, year, verbose);
+    let mut walk = FileWalk::new(file, config, license, year, verbose);
 
     for file_data in &mut walk {
         let FileData {

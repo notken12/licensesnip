@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use colored::Colorize;
 use ignore::Walk;
@@ -78,7 +78,7 @@ pub struct FileWalk {
 }
 
 impl FileWalk {
-    pub fn new(path: &str, config: Config, license: License, year: i32, verbose: bool) -> Self {
+    pub fn new(path: PathBuf, config: Config, license: License, year: i32, verbose: bool) -> Self {
         let filetype_map = config.get_filetype_map();
         Self {
             ignore_walk: Walk::new(path),
