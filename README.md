@@ -12,7 +12,7 @@ cargo install licensesnip
 
 ## 📜 Usage
 
-In your project's root directory, add a file named `.licensesnip` and write your license header there. Licensesnip will automatically `%FILENAME%` with the file name and `%YEAR%` with the year.
+In your project's root directory, add a file named `.licensesnip` and write your license header there. Licensesnip will automatically replace `%FILENAME%` with the file name and `%YEAR%` with the year.
 
 To add license headers to all your source code:
 
@@ -56,6 +56,31 @@ Create/find the local config file for the current directory:
 ```bash
 licensesnip config -d
 ```
+
+Example configuration:
+```json
+{
+  "use_gitignore": true,
+  "file_types": {
+    "js,mjs,ts,cjs,jsx,tsx": {
+      "before_line": "// "
+    },
+    "vue,html": {
+      "before_block": "<!--",
+      "before_line": "  ",
+      "after_block": "-->"
+    },
+    "rs": {
+      "before_line": "// "
+    },
+    "c": {
+      "enable": false
+    }
+  }
+}
+```
+
+To configure a language just specify how the comments for that language work. Supported properties are `before_line`, `after_line`, `before_block`, and `after_block`. To disable adding licenses to a filetype, set `enable` to false.
 
 ## ❤️ Contribution
 

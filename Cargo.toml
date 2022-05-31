@@ -2,10 +2,10 @@
 name = "licensesnip"
 description = "A tool to add license headers to your source code."
 license = "MIT"
-version = "1.3.1"
+version = "1.4.0"
 authors = ["notken12"]
 edition = "2021"
-repository = "https://github.com/notken12/licensesnip/"
+repository = "https://github.com/notken12/licensesnip"
 keywords = ["license", "header"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,4 +20,3 @@ mktemp = "0.4.1"
 directories = "4.0"
 clap = { version = "3.1.6", features = ["derive"] }
 chrono = "0.4.19"
-

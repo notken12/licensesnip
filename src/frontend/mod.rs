@@ -25,7 +25,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use colored::Colorize;
-use ignore::Walk;
+use ignore::{Walk, WalkBuilder};
 
 use crate::{
     config::{load_config, Config, FileTypeConfig, LoadConfigErr},
@@ -80,8 +80,11 @@ pub struct FileWalk {
 impl FileWalk {
     pub fn new(path: PathBuf, config: Config, license: License, year: i32, verbose: bool) -> Self {
         let filetype_map = config.get_filetype_map();
+        let walk = WalkBuilder::new(path)
+            .git_ignore(config.use_gitignore)
+            .build();
         Self {
-            ignore_walk: Walk::new(path),
+            ignore_walk: walk,
             verbose,
             filetype_map,
             license,
