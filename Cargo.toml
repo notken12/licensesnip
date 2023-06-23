@@ -2,7 +2,7 @@
 name = "licensesnip"
 description = "A tool to add license headers to your source code."
 license = "MIT"
-version = "1.4.0"
+version = "1.5.0"
 authors = ["notken12"]
 edition = "2021"
 repository = "https://github.com/notken12/licensesnip"

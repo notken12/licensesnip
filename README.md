@@ -19,7 +19,8 @@ To add license headers to all your source code:
 ```bash
 licensesnip
 ```
-Licensesnip ignores files in your .gitignore file by default.
+Licensesnip ignores files in your .gitignore file by default. 
+You can also add a file named .licensesnipignore and specify patterns the same way as in a .gitignore file.
 
 To remove license headers from all source code:
 

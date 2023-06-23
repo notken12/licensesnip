@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright (c) 2022 Ken Zhou
+// Copyright (c) 2023 Ken Zhou
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -80,11 +80,15 @@ pub struct FileWalk {
 impl FileWalk {
     pub fn new(path: PathBuf, config: Config, license: License, year: i32, verbose: bool) -> Self {
         let filetype_map = config.get_filetype_map();
-        let walk = WalkBuilder::new(path)
+        let mut builder = WalkBuilder::new(path);
+        let walk = builder
             .git_ignore(config.use_gitignore)
-            .build();
+            .add_custom_ignore_filename(".licensesnipignore");
+        // walk.add_ignore(Path::new("./.licensesnipignore"));
+        let ignore_walk = walk.build();
+
         Self {
-            ignore_walk: walk,
+            ignore_walk,
             verbose,
             filetype_map,
             license,
