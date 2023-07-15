@@ -151,7 +151,7 @@ impl License {
 
             if line.trim().is_empty() {
                 let untrimmed = format!("{}{}", cfg.before_line.clone(), cfg.after_line.clone());
-                let line = untrimmed.trim();
+                let line = untrimmed.trim_end();
                 text.push_str(line);
             } else {
                 let mut line_text = cfg.before_line.clone();
