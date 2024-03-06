@@ -52,10 +52,10 @@ You can use `licensesnip` with [pre-commit](https://pre-commit.com). Add it to y
 
 ```yaml
 - repo: https://github.com/notken12/licensesnip
-  rev: v1.1.3 # choose your preferred tag
+  rev: 19b1186 # choose your preferred tag or commit hash
   hooks:
     - id: licensesnip
-    - args: ["check"] # optionally modify the arguments for licensesnip (default arguments shown here)
+      args: ["check"] # optionally modify the arguments for licensesnip (default arguments shown here)
 ```
 
 ## ⚙️ Configuration
