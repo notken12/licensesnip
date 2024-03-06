@@ -1,0 +1,6 @@
+- id: licensesnip
+  name: check license headers in files
+  description: check license headers in files
+  entry: licensesnip
+  language: rust
+  args: ["check"]
