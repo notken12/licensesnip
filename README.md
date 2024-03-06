@@ -46,6 +46,18 @@ licensesnip src/main.rs
 licensesnip remove src/
 ```
 
+### Pre-commit hook
+
+You can use `licensesnip` with [pre-commit](https://pre-commit.com). Add it to your local `.pre-commit-config.yaml` as follows:
+
+```yaml
+- repo: https://github.com/notken12/licensesnip
+  rev: v1.1.3 # choose your preferred tag
+  hooks:
+    - id: licensesnip
+    - args: ["check"] # optionally modify the arguments for licensesnip (default arguments shown here)
+```
+
 ## ⚙️ Configuration
 
 Find your global Licensesnip config file:
