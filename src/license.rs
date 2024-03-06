@@ -47,6 +47,9 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     let mut tmp = File::create(&tmp_path)?;
     // Open source file for reading
     let mut src = File::open(&file_path)?;
+    // Copy file permissions
+    let src_metadata = src.metadata()?;
+    tmp.set_permissions(src_metadata.permissions())?;
     // Write the data to prepend
     tmp.write_all(data)?;
     // Copy the rest of the source file
@@ -68,6 +71,9 @@ fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
     let mut tmp = File::create(&tmp_path)?;
     // Open source file for reading
     let mut src = File::open(&file_path)?;
+    // Copy file permissions
+    let src_metadata = src.metadata()?;
+    tmp.set_permissions(src_metadata.permissions())?;
 
     let mut i = 0;
     let mut text = Vec::<u8>::new();
