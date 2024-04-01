@@ -68,7 +68,7 @@ pub enum Commands {
     #[clap(arg_required_else_help = false)]
     Check {
         /// The file(s) to check
-        file: Option<PathBuf>,
+        files: Vec<PathBuf>,
         /// Display more information
         #[clap(short, long)]
         verbose: bool,

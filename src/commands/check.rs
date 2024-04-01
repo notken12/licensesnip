@@ -35,45 +35,57 @@ use colored::*;
 use super::Commands;
 
 pub fn execute(args: Commands) {
-    let (verbose, file) = match args {
-        Commands::Check { verbose, file } => (verbose, file.unwrap_or(PathBuf::from("."))),
+    let (verbose, files) = match args {
+        Commands::Check { verbose, files } => (
+            verbose,
+            if files.is_empty() {
+                vec![PathBuf::from(".")]
+            } else {
+                files
+            },
+        ),
         _ => panic!("Wrong command type"),
     };
     let config = f_load_config();
     let license = f_read_license();
 
     let mut checked_files_count: u32 = 0;
+    let mut matched_filetypes_count: u32 = 0;
 
     let year = chrono::Utc::now().date().year();
 
-    let mut walk = FileWalk::new(file, config, license, year, verbose);
+    for file in files {
+        let mut walk = FileWalk::new(file, config.clone(), license.clone(), year, verbose);
 
-    for file_data in &mut walk {
-        let FileData {
-            header_text,
-            formatted_lines: _,
-            entry,
-        } = file_data;
+        for file_data in &mut walk {
+            let FileData {
+                header_text,
+                formatted_lines: _,
+                entry,
+            } = file_data;
 
-        match License::check_file(&entry, &header_text) {
-            Ok(r) => {
-                if r {
-                    if verbose {
-                        println!("(ok) License header present - {}", entry.path().display());
+            match License::check_file(&entry, &header_text) {
+                Ok(r) => {
+                    if r {
+                        if verbose {
+                            println!("(ok) License header present - {}", entry.path().display());
+                        }
+                        checked_files_count += 1;
+                    } else {
+                        println!(
+                            "(err) License header missing - {}. \nDid you forget to run `licensesnip`?",
+                            entry.path().display()
+                        );
+                        std::process::exit(1);
                     }
-                    checked_files_count += 1;
-                } else {
-                    println!(
-                        "(err) License header missing - {}. \nDid you forget to run `licensesnip`?",
-                        entry.path().display()
-                    );
-                    std::process::exit(1);
+                }
+                Err(e) => {
+                    println!("{:?}", e)
                 }
             }
-            Err(e) => {
-                println!("{:?}", e)
-            }
         }
+
+        matched_filetypes_count += walk.matched_filetypes_count;
     }
 
     let status_str = format!(
@@ -84,7 +96,7 @@ pub fn execute(args: Commands) {
 
     println!("{}", status_str_colored);
 
-    if walk.matched_filetypes_count == 0 {
+    if matched_filetypes_count == 0 {
         let warning = format!("{}\n\n{}\n\n{}", "⚠ No supported file types were found. You may need to add styling rules for your filetypes in your user/local config file. Run".yellow(), "licensesnip help", "for more info.".yellow());
 
         println!("{}", warning);

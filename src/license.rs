@@ -108,6 +108,7 @@ pub enum ReadLicenseErr {
     FileReadErr,
 }
 
+#[derive(Clone)]
 pub struct License {
     pub raw_text: String,
 }
