@@ -1,8 +1,9 @@
+#!/usr/bin/env node
 // run.js
 //
 // MIT License
 //
-// Copyright (c) 2023 Ken Zhou
+// Copyright (c) 2025 Ken Zhou
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#!/usr/bin/env node
 
 const getBinary = require("./getBinary");
 getBinary().run();
