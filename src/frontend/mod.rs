@@ -99,9 +99,10 @@ impl FileWalk {
 }
 
 pub struct FileData {
-    pub formatted_lines: Vec<String>,
+    pub formatted_license_lines: Vec<String>,
     pub header_text: String,
     pub entry: ignore::DirEntry,
+    pub file_type_config: FileTypeConfig,
 }
 
 impl Iterator for FileWalk {
@@ -135,7 +136,7 @@ impl Iterator for FileWalk {
                         }
                     };
 
-                    let filetype_cfg = match self.filetype_map.get(ext) {
+                    let file_type_config = match self.filetype_map.get(ext) {
                         Some(e) => {
                             self.matched_filetypes_count += 1;
                             e
@@ -154,7 +155,7 @@ impl Iterator for FileWalk {
                         }
                     };
 
-                    if !filetype_cfg.enable {
+                    if !file_type_config.enable {
                         // Disabled for this filetype
                         if self.verbose {
                             println!(
@@ -166,16 +167,19 @@ impl Iterator for FileWalk {
                         return self.next();
                     }
 
-                    let raw_lines = self.license.get_lines();
+                    let raw_license_lines = self.license.get_lines();
 
-                    let f_lines = License::get_formatted_lines(&raw_lines, &file_name, self.year);
+                    let formatted_license_lines =
+                        License::get_formatted_lines(&raw_license_lines, &file_name, self.year);
 
-                    let header_text = License::get_header_text(&f_lines, filetype_cfg);
+                    let header_text =
+                        License::get_header_text(&formatted_license_lines, file_type_config);
 
                     return Some(FileData {
-                        formatted_lines: f_lines,
+                        formatted_license_lines,
                         header_text,
                         entry,
+                        file_type_config: file_type_config.clone(),
                     });
                 }
                 Err(err) => {

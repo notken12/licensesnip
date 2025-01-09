@@ -51,11 +51,12 @@ pub fn execute(args: Commands) {
     for file_data in &mut walk {
         let FileData {
             header_text,
-            formatted_lines: _,
+            formatted_license_lines: _,
             entry,
+            file_type_config,
         } = file_data;
 
-        match License::remove_from_file(&entry, &header_text) {
+        match License::remove_from_file(&entry, &file_type_config, &header_text) {
             Ok(r) => {
                 match r {
                     RemoveFromFileResult::Removed => {
