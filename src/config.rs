@@ -173,10 +173,7 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
         Err(_) => return Err(LoadConfigErr::LoadUserConfigErr),
     };
 
-    let user_config = match PartialConfig::from_path(&config_path, true) {
-        Ok(c) => c,
-        Err(e) => return Err(e),
-    };
+    let user_config = PartialConfig::from_path(&config_path, true)?;
 
     let cwd_config = match PartialConfig::from_path(Path::new(CFG_PATH), false) {
         Ok(c) => Some(c),
