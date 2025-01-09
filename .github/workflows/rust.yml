@@ -33,7 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
-          name: licensesnip # optional, default is artifact
+          name: licensesnip-linux # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
           path: licensesnip-linux.tar.gz
           # The desired behavior if no files are found using the provided path.
@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
-          name: licensesnip # optional, default is artifact
+          name: licensesnip-win64 # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
           path: licensesnip-win64.tar.gz
           # The desired behavior if no files are found using the provided path.
@@ -89,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
-          name: licensesnip # optional, default is artifact
+          name: licensesnip-macos # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
           path: licensesnip-macos.tar.gz
           # The desired behavior if no files are found using the provided path.
