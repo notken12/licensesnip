@@ -30,7 +30,7 @@ jobs:
       - name: Check dir
         run: dir; dir builds; dir builds/licensesnip-linux
       - name: Upload build
-        uses: actions/upload-artifact@v2.3.1
+        uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
           name: licensesnip # optional, default is artifact
@@ -58,7 +58,7 @@ jobs:
       - name: Check dir
         run: ls; ls builds; ls builds/licensesnip-win64
       - name: Upload build
-        uses: actions/upload-artifact@v2.3.1
+        uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
           name: licensesnip # optional, default is artifact
@@ -86,7 +86,7 @@ jobs:
       - name: Check dir
         run: ls; ls builds; ls builds/licensesnip-macos
       - name: Upload build
-        uses: actions/upload-artifact@v2.3.1
+        uses: actions/upload-artifact@v4.5.0
         with:
           # Artifact name
           name: licensesnip # optional, default is artifact
