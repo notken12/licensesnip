@@ -46,6 +46,8 @@ pub struct FileTypeConfig {
     pub after_line: String,
     #[serde(default = "get_true")]
     pub enable: bool,
+    #[serde(default = "get_true")]
+    pub skip_shebang_line: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -82,8 +84,10 @@ impl Config {
 
         new
     }
+}
 
-    pub fn default() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
             use_gitignore: true,
             file_types: HashMap::<String, FileTypeConfig>::new(),
@@ -189,12 +193,9 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
 
     let mut assigned = user_config.clone();
 
-    match cwd_config {
-        Some(c) => {
-            assigned = PartialConfig::assign(&user_config, &c);
-        }
-        None => {}
-    };
+    if let Some(c) = cwd_config {
+        assigned = PartialConfig::assign(&user_config, &c);
+    }
 
     Ok(Config::assign_partial(&base, &assigned))
 }
@@ -202,6 +203,7 @@ pub fn load_config() -> Result<Config, LoadConfigErr> {
 #[derive(Debug)]
 enum CreateDefaultConfigErr {
     MissingPathParentErr,
+    #[allow(dead_code)]
     IoErr(std::io::Error),
 }
 
