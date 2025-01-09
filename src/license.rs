@@ -29,14 +29,14 @@ use std::{
     fs,
     fs::File,
     io::Write,
-    io::{self, BufReader, Read},
+    io::{self, BufRead, BufReader, Read},
+    ops::Range,
     path::Path,
-    str::Bytes,
 };
 
 const LICENSE_PATH: &str = ".licensesnip";
 
-fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
+fn prepend_file(header_text: &[u8], file_path: &Path, skip_shebang_line: bool) -> io::Result<()> {
     // Create a temporary file
     let tmp = Temp::new_file()?;
     let tmp_path = tmp.to_path_buf();
@@ -46,21 +46,45 @@ fn prepend_file(data: &[u8], file_path: &Path) -> io::Result<()> {
     // Open temp file for writing
     let mut tmp = File::create(&tmp_path)?;
     // Open source file for reading
-    let mut src = File::open(&file_path)?;
+    let mut src = File::open(file_path)?;
     // Copy file permissions
     let src_metadata = src.metadata()?;
     tmp.set_permissions(src_metadata.permissions())?;
-    // Write the data to prepend
-    tmp.write_all(data)?;
-    // Copy the rest of the source file
-    io::copy(&mut src, &mut tmp)?;
-    fs::remove_file(&file_path)?;
-    fs::copy(&tmp_path, &file_path)?;
+    if skip_shebang_line {
+        let mut shebang_line = String::new();
+        let src = BufReader::new(&src);
+        let mut lines = src.lines();
+        if let Some(line) = lines.next() {
+            shebang_line = line.unwrap();
+        }
+        shebang_line.push('\n');
+        if shebang_line.starts_with("#!") {
+            // Write the shebang line first.
+            tmp.write_all(shebang_line.as_bytes())?;
+            tmp.write_all(header_text)?;
+        } else {
+            tmp.write_all(header_text)?;
+            // Write the first line that we've already read.
+            tmp.write_all(shebang_line.as_bytes())?;
+        }
+        for line in lines {
+            tmp.write_all(line.unwrap().as_bytes())?;
+            tmp.write_all(b"\n")?;
+        }
+    } else {
+        tmp.write_all(header_text)?;
+        // Copy the rest of the source file
+        io::copy(&mut src, &mut tmp)?;
+    }
+    drop(tmp);
+    drop(src);
+    fs::remove_file(file_path)?;
+    fs::copy(&tmp_path, file_path)?;
     fs::remove_file(&tmp_path)?;
     Ok(())
 }
 
-fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
+fn remove_range_of_chars(omit_range: Range<u32>, file_path: &Path) -> io::Result<()> {
     // Create a temporary file
     let tmp = Temp::new_file()?;
     let tmp_path = tmp.to_path_buf();
@@ -70,7 +94,7 @@ fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
     // Open temp file for writing
     let mut tmp = File::create(&tmp_path)?;
     // Open source file for reading
-    let mut src = File::open(&file_path)?;
+    let mut src = File::open(file_path)?;
     // Copy file permissions
     let src_metadata = src.metadata()?;
     tmp.set_permissions(src_metadata.permissions())?;
@@ -82,7 +106,7 @@ fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
     for byte in full_text {
         match byte {
             Ok(byte) => {
-                if i >= count {
+                if !omit_range.contains(&i) {
                     text.push(byte)
                 }
                 i += 1;
@@ -98,8 +122,10 @@ fn remove_first_chars(count: u32, file_path: &Path) -> io::Result<()> {
     tmp.write_all(text.as_slice())?;
     // Copy the rest of the source file
     io::copy(&mut src, &mut tmp)?;
-    fs::remove_file(&file_path)?;
-    fs::copy(&tmp_path, &file_path)?;
+    drop(src);
+    drop(tmp);
+    fs::remove_file(file_path)?;
+    fs::copy(&tmp_path, file_path)?;
     fs::remove_file(&tmp_path)?;
     Ok(())
 }
@@ -175,28 +201,44 @@ impl License {
         text
     }
 
-    pub fn check_file(ent: &DirEntry, header_text: &str) -> Result<bool, AddToFileErr> {
+    pub fn check_file(
+        ent: &DirEntry,
+        file_type_config: &FileTypeConfig,
+        header_text: &str,
+    ) -> Result<bool, AddToFileErr> {
         let path = ent.path();
         let file_text = match fs::read_to_string(path) {
             Ok(s) => s,
             Err(_) => return Err(AddToFileErr::ReadFileErr),
         };
 
-        let mut h_bytes = header_text.bytes();
-        let mut f_bytes = file_text.bytes();
+        let h_bytes = header_text.as_bytes();
+        let f_bytes = file_text.as_bytes();
 
-        let f_match = file_has_matching_header(&mut h_bytes, &mut f_bytes);
-        Ok(f_match.matching)
+        let matching_header =
+            file_has_matching_header(h_bytes, f_bytes, file_type_config.skip_shebang_line);
+        Ok(matches!(
+            matching_header,
+            MatchingHeaderResult::MatchingHeaderAt(_)
+        ))
     }
 
-    pub fn add_to_file(ent: &DirEntry, header_text: &str) -> Result<AddToFileResult, AddToFileErr> {
-        if !Self::check_file(ent, header_text)? {
+    pub fn add_to_file(
+        ent: &DirEntry,
+        file_type_config: &FileTypeConfig,
+        header_text: &str,
+    ) -> Result<AddToFileResult, AddToFileErr> {
+        if !Self::check_file(ent, file_type_config, header_text)? {
             let path = ent.path();
             let mut text_to_add = header_text.to_owned();
             text_to_add.push_str("\n\n");
 
             // add to top of file
-            match prepend_file(text_to_add.as_bytes(), path) {
+            match prepend_file(
+                text_to_add.as_bytes(),
+                path,
+                file_type_config.skip_shebang_line,
+            ) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("{}", e);
@@ -212,6 +254,7 @@ impl License {
 
     pub fn remove_from_file(
         ent: &DirEntry,
+        file_type_config: &FileTypeConfig,
         header_text: &str,
     ) -> Result<RemoveFromFileResult, RemoveFromFileErr> {
         let path = ent.path();
@@ -220,29 +263,18 @@ impl License {
             Err(_) => return Err(RemoveFromFileErr::ReadFileErr),
         };
 
-        let mut h_bytes = header_text.bytes();
-        let mut f_bytes = file_text.bytes();
+        let h_bytes = header_text.as_bytes();
+        let f_bytes = file_text.as_bytes();
 
-        let f_match = file_has_matching_header(&mut h_bytes, &mut f_bytes);
-        let should_remove = f_match.matching;
+        let f_match =
+            file_has_matching_header(h_bytes, f_bytes, file_type_config.skip_shebang_line);
 
-        let mut r_count: u32 = f_match.header_len;
-
-        if !should_remove {
+        let MatchingHeaderResult::MatchingHeaderAt(header_range) = f_match else {
             return Ok(RemoveFromFileResult::NoChange);
-        }
-
-        // Also remove trailing newlines
-        for f_byte in f_bytes {
-            if f_byte != 13 && f_byte != 10 {
-                break;
-            }
-
-            r_count += 1;
-        }
+        };
 
         // remove from top of file
-        match remove_first_chars(r_count, path) {
+        match remove_range_of_chars(header_range, path) {
             Ok(_) => Ok(RemoveFromFileResult::Removed),
             Err(e) => {
                 println!("{}", e);
@@ -252,46 +284,50 @@ impl License {
     }
 }
 
-struct MatchingHeaderResult {
-    matching: bool,
-    header_len: u32,
+#[derive(Debug)]
+enum MatchingHeaderResult {
+    MatchingHeaderAt(Range<u32>),
+    NotMatching,
 }
 
-fn file_has_matching_header(h_bytes: &mut Bytes, f_bytes: &mut Bytes) -> MatchingHeaderResult {
-    let mut has = true;
-    let mut f_header_len = 0;
+fn file_has_matching_header(
+    header: &[u8],
+    mut file: &[u8],
+    skip_shebang_line: bool,
+) -> MatchingHeaderResult {
+    let mut header_start: u32 = 0;
 
-    while let Some(h_byte) = h_bytes.next() {
-        let f_byte = match f_bytes.next() {
-            Some(b) => b,
-            None => {
-                // Reached the end of file
-                has = false;
+    if skip_shebang_line && file.len() >= 2 && &file[0..2] == b"#!" {
+        // Skip the shebang line
+        while !file.is_empty() {
+            header_start += 1;
+            let ch = file[0];
+            file = &file[1..];
+            if ch == b'\n' {
                 break;
             }
-        };
-        if f_byte != h_byte {
-            // Check if its a line-ending problem
-            // LF vs CRLF
-            // Skip CR, go to LF
-            if f_byte == 13 && h_byte == 10 {
-                let _ = f_bytes.next();
-                f_header_len += 2;
-                continue;
-            } else if f_byte == 10 && h_byte == 13 {
-                let _ = h_bytes.next();
-                continue;
-            }
-            has = false;
-            break;
         }
-        f_header_len += 1;
     }
 
-    MatchingHeaderResult {
-        matching: has,
-        header_len: f_header_len,
+    let mut header_end: u32 = header_start;
+    if file.len() < header.len() || header != &file[0..header.len()] {
+        return MatchingHeaderResult::NotMatching;
     }
+
+    header_end += header.len() as u32;
+    file = &file[header.len()..];
+
+    while !file.is_empty() {
+        let ch = file[0];
+        if ch == b'\n' || ch == b'\r' {
+            header_end += 1;
+            file = &file[1..];
+            continue;
+        }
+        break;
+    }
+
+    MatchingHeaderResult::MatchingHeaderAt(header_start..header_end)
 }
 
 pub enum AddToFileResult {
@@ -320,11 +356,9 @@ pub fn read_license() -> Result<License, ReadLicenseErr> {
     let read_result = fs::read_to_string(LICENSE_PATH);
 
     match read_result {
-        Ok(str) => {
-            return Ok(License {
-                raw_text: str.trim().to_string(),
-            })
-        }
+        Ok(str) => Ok(License {
+            raw_text: str.trim().to_string(),
+        }),
         Err(_) => Err(ReadLicenseErr::FileReadErr),
     }
 }
